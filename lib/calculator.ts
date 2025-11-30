@@ -44,35 +44,54 @@ export function calculateInvestment(
     const perPeriodAmount = amount / totalPeriods;
     const daysPerPeriod = totalDays / totalPeriods;
 
-    let shares = 0;
-    let currentPeriod = 0;
+    // Pre-calculate all investments
+    const investments: { dayIndex: number; shares: number; invested: number }[] = [];
+    let cumulativeShares = 0;
+    let cumulativeInvested = 0;
+
+    for (let period = 0; period < totalPeriods; period++) {
+      const dayIndex = Math.floor(period * daysPerPeriod);
+      if (dayIndex >= sortedPrices.length) break;
+
+      const priceAtPurchase = sortedPrices[dayIndex].price;
+      const sharesBought = perPeriodAmount / priceAtPurchase;
+      cumulativeShares += sharesBought;
+      cumulativeInvested += perPeriodAmount;
+
+      investments.push({
+        dayIndex,
+        shares: cumulativeShares,
+        invested: cumulativeInvested,
+      });
+    }
 
     // Generate data points for all days
+    let investmentIndex = 0;
     sortedPrices.forEach((pricePoint, index) => {
       const years = (index / totalDays) * totalYears;
-      
-      // Check if we should invest at this day
-      const expectedPeriod = Math.floor(index / daysPerPeriod);
-      while (currentPeriod < expectedPeriod && currentPeriod < totalPeriods) {
-        const investDayIndex = Math.floor(currentPeriod * daysPerPeriod);
-        if (investDayIndex < sortedPrices.length) {
-          const priceAtPurchase = sortedPrices[investDayIndex].price;
-          const sharesBought = perPeriodAmount / priceAtPurchase;
-          shares += sharesBought;
-          totalInvested += perPeriodAmount;
-        }
-        currentPeriod++;
+
+      // Find the investment state at this day
+      while (
+        investmentIndex < investments.length - 1 &&
+        investments[investmentIndex + 1].dayIndex <= index
+      ) {
+        investmentIndex++;
       }
 
-      // Calculate current value with shares accumulated so far
-      const valueAtThisPoint = shares * pricePoint.price;
-      
-      investedSpots.push({ x: years, y: totalInvested });
+      const currentShares =
+        investmentIndex < investments.length ? investments[investmentIndex].shares : 0;
+      const currentInvested =
+        investmentIndex < investments.length ? investments[investmentIndex].invested : 0;
+
+      const valueAtThisPoint = currentShares * pricePoint.price;
+
+      investedSpots.push({ x: years, y: currentInvested });
       valueSpots.push({ x: years, y: valueAtThisPoint });
     });
 
-    // Final value
-    currentValue = shares * endPrice;
+    // Final values
+    totalInvested = cumulativeInvested;
+    currentValue = cumulativeShares * endPrice;
   }
 
   // Calculate metrics
