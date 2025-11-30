@@ -1,4 +1,4 @@
-import { PriceData } from '@/types';
+import { AssetDefinition, PriceData } from '@/types';
 
 // Simple in-memory cache
 const cache = new Map<string, { data: PriceData[]; timestamp: number }>();
@@ -58,18 +58,9 @@ async function fetchYahooPrices(symbol: string, days: number): Promise<PriceData
   }
 }
 
-export function fetchBitcoinPrices(days: number): Promise<PriceData[]> {
-  return fetchYahooPrices('BTC-USD', days);
-}
-
-export function fetchTeslaPrices(days: number): Promise<PriceData[]> {
-  return fetchYahooPrices('TSLA', days);
-}
-
-export async function fetchPrices(asset: 'bitcoin' | 'tesla', days: number): Promise<PriceData[]> {
-  if (asset === 'bitcoin') {
-    return fetchBitcoinPrices(days);
-  } else {
-    return fetchTeslaPrices(days);
+export function fetchPrices(asset: AssetDefinition, days: number): Promise<PriceData[]> {
+  if (!asset.symbol) {
+    throw new Error(`Asset ${asset.id} is missing a data symbol`);
   }
+  return fetchYahooPrices(asset.symbol, days);
 }

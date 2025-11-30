@@ -1,5 +1,5 @@
 export interface InvestmentConfig {
-  asset: 'bitcoin' | 'tesla';
+  asset: string;
   yearsAgo: number;
   amount: number;
   type: 'single' | 'recurring';
@@ -23,4 +23,14 @@ export interface CalculationResult {
 export interface PriceData {
   date: string;
   price: number;
+}
+
+export interface AssetDefinition {
+  id: string;
+  type: 'crypto' | 'stock';
+  symbol: string; // Yahoo Finance symbol, e.g., BTC-USD, TSLA
+  icon?: string;
+  names: Record<string, string>;
+  defaultYearsAgo?: number;
+  order?: number;
 }

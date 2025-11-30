@@ -2,15 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { InvestmentConfig } from '@/types';
 import { fetchPrices } from '@/lib/priceService';
 import { calculateInvestment } from '@/lib/calculator';
+import { getAssetById } from '@/lib/assets';
 
 export async function POST(request: NextRequest) {
   try {
     const config: InvestmentConfig = await request.json();
 
     // Validate input
-    if (!config.asset || !['bitcoin', 'tesla'].includes(config.asset)) {
+    const asset = config.asset ? getAssetById(config.asset) : undefined;
+    if (!asset) {
       return NextResponse.json(
-        { error: 'Invalid asset. Must be "bitcoin" or "tesla".' },
+        { error: 'Invalid asset. Please select a supported asset.' },
         { status: 400 }
       );
     }
@@ -45,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch price data
     const days = config.yearsAgo * 365;
-    const priceData = await fetchPrices(config.asset, days);
+    const priceData = await fetchPrices(asset, days);
 
     // Calculate investment results
     const result = calculateInvestment(config, priceData);
