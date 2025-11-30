@@ -45,30 +45,34 @@ export function calculateInvestment(
     const daysPerPeriod = totalDays / totalPeriods;
 
     let shares = 0;
+    let currentPeriod = 0;
 
-    for (let period = 0; period < totalPeriods; period++) {
-      const dayIndex = Math.floor(period * daysPerPeriod);
-      if (dayIndex >= sortedPrices.length) break;
+    // Generate data points for all days
+    sortedPrices.forEach((pricePoint, index) => {
+      const years = (index / totalDays) * totalYears;
+      
+      // Check if we should invest at this day
+      const expectedPeriod = Math.floor(index / daysPerPeriod);
+      while (currentPeriod < expectedPeriod && currentPeriod < totalPeriods) {
+        const investDayIndex = Math.floor(currentPeriod * daysPerPeriod);
+        if (investDayIndex < sortedPrices.length) {
+          const priceAtPurchase = sortedPrices[investDayIndex].price;
+          const sharesBought = perPeriodAmount / priceAtPurchase;
+          shares += sharesBought;
+          totalInvested += perPeriodAmount;
+        }
+        currentPeriod++;
+      }
 
-      const priceAtPurchase = sortedPrices[dayIndex].price;
-      const sharesBought = perPeriodAmount / priceAtPurchase;
-      shares += sharesBought;
-      totalInvested += perPeriodAmount;
-
-      const years = (dayIndex / totalDays) * totalYears;
-      const currentPriceAtThisPoint = sortedPrices[dayIndex].price;
-      const valueAtThisPoint = shares * currentPriceAtThisPoint;
-
+      // Calculate current value with shares accumulated so far
+      const valueAtThisPoint = shares * pricePoint.price;
+      
       investedSpots.push({ x: years, y: totalInvested });
       valueSpots.push({ x: years, y: valueAtThisPoint });
-    }
+    });
 
     // Final value
     currentValue = shares * endPrice;
-
-    // Add final data point
-    investedSpots.push({ x: totalYears, y: totalInvested });
-    valueSpots.push({ x: totalYears, y: currentValue });
   }
 
   // Calculate metrics
