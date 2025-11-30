@@ -3,41 +3,12 @@ import { PriceData } from '@/types';
 // Simple in-memory cache
 const cache = new Map<string, { data: PriceData[]; timestamp: number }>();
 const CACHE_TTL = 1000 * 60 * 60; // 1 hour
+const YAHOO_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (compatible; InvestLongTerm/1.0; +https://vercel.com)',
+};
 
-export async function fetchBitcoinPrices(days: number): Promise<PriceData[]> {
-  const cacheKey = `bitcoin-${days}`;
-  const cached = cache.get(cacheKey);
-
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    return cached.data;
-  }
-
-  try {
-    // CoinGecko API - free, no API key needed
-    const response = await fetch(
-      `https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=${days}&interval=daily`
-    );
-
-    if (!response.ok) {
-      throw new Error(`CoinGecko API error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    const prices: PriceData[] = data.prices.map((item: [number, number]) => ({
-      date: new Date(item[0]).toISOString(),
-      price: item[1],
-    }));
-
-    cache.set(cacheKey, { data: prices, timestamp: Date.now() });
-    return prices;
-  } catch (error) {
-    console.error('Error fetching Bitcoin prices:', error);
-    throw error;
-  }
-}
-
-export async function fetchTeslaPrices(days: number): Promise<PriceData[]> {
-  const cacheKey = `tesla-${days}`;
+async function fetchYahooPrices(symbol: string, days: number): Promise<PriceData[]> {
+  const cacheKey = `${symbol}-${days}`;
   const cached = cache.get(cacheKey);
 
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
@@ -55,29 +26,44 @@ export async function fetchTeslaPrices(days: number): Promise<PriceData[]> {
 
     // Yahoo Finance API
     const response = await fetch(
-      `https://query1.finance.yahoo.com/v8/finance/chart/TSLA?period1=${period1}&period2=${period2}&interval=1d`
+      `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?period1=${period1}&period2=${period2}&interval=1d`,
+      { headers: YAHOO_HEADERS }
     );
 
     if (!response.ok) {
-      throw new Error(`Yahoo Finance API error: ${response.statusText}`);
+      throw new Error(`Yahoo Finance API error (${symbol}): ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
-    const result = data.chart.result[0];
-    const timestamps = result.timestamp;
-    const closePrices = result.indicators.quote[0].close;
+    const result = data.chart?.result?.[0];
+    const timestamps: number[] = result?.timestamp ?? [];
+    const closePrices: (number | null)[] = result?.indicators?.quote?.[0]?.close ?? [];
 
-    const prices: PriceData[] = timestamps.map((timestamp: number, index: number) => ({
-      date: new Date(timestamp * 1000).toISOString(),
-      price: closePrices[index],
-    }));
+    if (!timestamps.length || !closePrices.length) {
+      throw new Error(`Yahoo Finance API error (${symbol}): missing data`);
+    }
+
+    const prices: PriceData[] = timestamps
+      .map((timestamp: number, index: number) => ({
+        date: new Date(timestamp * 1000).toISOString(),
+        price: closePrices[index] ?? NaN,
+      }))
+      .filter((point) => Number.isFinite(point.price));
 
     cache.set(cacheKey, { data: prices, timestamp: Date.now() });
     return prices;
   } catch (error) {
-    console.error('Error fetching Tesla prices:', error);
+    console.error(`Error fetching ${symbol} prices:`, error);
     throw error;
   }
+}
+
+export function fetchBitcoinPrices(days: number): Promise<PriceData[]> {
+  return fetchYahooPrices('BTC-USD', days);
+}
+
+export function fetchTeslaPrices(days: number): Promise<PriceData[]> {
+  return fetchYahooPrices('TSLA', days);
 }
 
 export async function fetchPrices(asset: 'bitcoin' | 'tesla', days: number): Promise<PriceData[]> {
