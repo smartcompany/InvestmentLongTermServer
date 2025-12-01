@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { InvestmentConfig } from '@/types';
+import { InvestmentConfig, AssetDefinition } from '@/types';
 import { fetchPrices } from '@/lib/priceService';
 import { calculateInvestment } from '@/lib/calculator';
-import { getAssetById } from '@/lib/assets';
+import assetsData from '../assets/assets.json';
+
+const assets: AssetDefinition[] = assetsData as AssetDefinition[];
+
+function getAssetById(id: string): AssetDefinition | undefined {
+  return assets.find((asset) => asset.id === id);
+}
 
 export async function POST(request: NextRequest) {
   try {
