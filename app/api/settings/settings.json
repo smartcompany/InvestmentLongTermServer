@@ -1,6 +1,6 @@
 {
-    "ios_ad": "rewarded_test",
-    "android_ad": "rewarded_test",
+    "ios_ad": "rewarded_ad",
+    "android_ad": "rewarded_ad",
     "ref": {
         "ios": {
           "rewarded_ad": "ca-app-pub-5520596727761259/3786642276",
