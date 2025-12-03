@@ -28,11 +28,25 @@
     }
   },
   {
+    "id": "ripple",
+    "type": "crypto",
+    "symbol": "XRP-USD",
+    "icon": "💧",
+    "defaultYearsAgo": 5,
+    "order": 3,
+    "names": {
+      "en": "Ripple",
+      "ko": "리플",
+      "zh": "瑞波币",
+      "ja": "リップル"
+    }
+  },
+  {
     "id": "tesla",
     "type": "stock",
     "symbol": "TSLA",
     "icon": "⚡",
-    "order": 3,
+    "order": 4,
     "names": {
       "en": "Tesla",
       "ko": "테슬라",
@@ -45,7 +59,7 @@
     "type": "stock",
     "symbol": "GOOGL",
     "icon": "🔎",
-    "order": 4,
+    "order": 5,
     "names": {
       "en": "Google",
       "ko": "구글",
