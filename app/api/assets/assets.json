@@ -42,11 +42,53 @@
     }
   },
   {
+    "id": "binance",
+    "type": "crypto",
+    "symbol": "BNB-USD",
+    "icon": "🟡",
+    "defaultYearsAgo": 5,
+    "order": 4,
+    "names": {
+      "en": "Binance Coin",
+      "ko": "바이낸스 코인",
+      "zh": "币安币",
+      "ja": "バイナンスコイン"
+    }
+  },
+  {
+    "id": "cardano",
+    "type": "crypto",
+    "symbol": "ADA-USD",
+    "icon": "🔵",
+    "defaultYearsAgo": 5,
+    "order": 5,
+    "names": {
+      "en": "Cardano",
+      "ko": "카르다노",
+      "zh": "卡尔达诺",
+      "ja": "カルダノ"
+    }
+  },
+  {
+    "id": "solana",
+    "type": "crypto",
+    "symbol": "SOL-USD",
+    "icon": "🟣",
+    "defaultYearsAgo": 5,
+    "order": 6,
+    "names": {
+      "en": "Solana",
+      "ko": "솔라나",
+      "zh": "索拉纳",
+      "ja": "ソラナ"
+    }
+  },
+  {
     "id": "tesla",
     "type": "stock",
     "symbol": "TSLA",
     "icon": "⚡",
-    "order": 4,
+    "order": 7,
     "names": {
       "en": "Tesla",
       "ko": "테슬라",
@@ -59,12 +101,77 @@
     "type": "stock",
     "symbol": "GOOGL",
     "icon": "🔎",
-    "order": 5,
+    "order": 8,
     "names": {
       "en": "Google",
       "ko": "구글",
       "zh": "谷歌",
       "ja": "グーグル"
+    }
+  },
+  {
+    "id": "apple",
+    "type": "stock",
+    "symbol": "AAPL",
+    "icon": "🍎",
+    "order": 9,
+    "names": {
+      "en": "Apple",
+      "ko": "애플",
+      "zh": "苹果",
+      "ja": "アップル"
+    }
+  },
+  {
+    "id": "microsoft",
+    "type": "stock",
+    "symbol": "MSFT",
+    "icon": "🪟",
+    "order": 10,
+    "names": {
+      "en": "Microsoft",
+      "ko": "마이크로소프트",
+      "zh": "微软",
+      "ja": "マイクロソフト"
+    }
+  },
+  {
+    "id": "amazon",
+    "type": "stock",
+    "symbol": "AMZN",
+    "icon": "📦",
+    "order": 11,
+    "names": {
+      "en": "Amazon",
+      "ko": "아마존",
+      "zh": "亚马逊",
+      "ja": "アマゾン"
+    }
+  },
+  {
+    "id": "nvidia",
+    "type": "stock",
+    "symbol": "NVDA",
+    "icon": "🟢",
+    "order": 12,
+    "names": {
+      "en": "Nvidia",
+      "ko": "엔비디아",
+      "zh": "英伟达",
+      "ja": "エヌビディア"
+    }
+  },
+  {
+    "id": "meta",
+    "type": "stock",
+    "symbol": "META",
+    "icon": "🔵",
+    "order": 13,
+    "names": {
+      "en": "Meta",
+      "ko": "메타",
+      "zh": "Meta",
+      "ja": "メタ"
     }
   }
 ]
