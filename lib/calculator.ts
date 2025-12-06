@@ -17,8 +17,12 @@ export function calculateInvestment(
 
   const startPrice = sortedPrices[0].price;
   const endPrice = sortedPrices[sortedPrices.length - 1].price;
-  const totalDays = sortedPrices.length;
-  const totalYears = totalDays / 365;
+  const startDate = new Date(sortedPrices[0].date);
+  const endDate = new Date(sortedPrices[sortedPrices.length - 1].date);
+  // 실제 날짜 차이를 밀리초로 계산하고 일수로 변환
+  const actualDaysDiff = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
+  const totalYears = actualDaysDiff / 365;
+  const totalDays = sortedPrices.length; // 차트용 데이터 포인트 수
 
   let totalInvested = 0;
   let currentValue = 0;
