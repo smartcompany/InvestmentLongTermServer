@@ -186,6 +186,34 @@
       "zh": "现金",
       "ja": "現金"
     }
+  },
+  {
+    "id": "gold",
+    "type": "commodity",
+    "symbol": "GC=F",
+    "icon": "🥇",
+    "defaultYearsAgo": 5,
+    "order": 15,
+    "names": {
+      "en": "Gold",
+      "ko": "금",
+      "zh": "黄金",
+      "ja": "金"
+    }
+  },
+  {
+    "id": "silver",
+    "type": "commodity",
+    "symbol": "SI=F",
+    "icon": "🥈",
+    "defaultYearsAgo": 5,
+    "order": 16,
+    "names": {
+      "en": "Silver",
+      "ko": "은",
+      "zh": "白银",
+      "ja": "銀"
+    }
   }
 ]
 

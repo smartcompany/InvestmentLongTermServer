@@ -27,8 +27,8 @@ export interface PriceData {
 
 export interface AssetDefinition {
   id: string;
-  type: 'crypto' | 'stock' | 'cash';
-  symbol: string; // Yahoo Finance symbol, e.g., BTC-USD, TSLA (not used for cash)
+  type: 'crypto' | 'stock' | 'cash' | 'commodity';
+  symbol: string; // Yahoo Finance symbol, e.g., BTC-USD, TSLA, GC=F (not used for cash)
   icon?: string;
   names: Record<string, string>;
   defaultYearsAgo?: number;
