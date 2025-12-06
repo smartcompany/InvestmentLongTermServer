@@ -173,6 +173,19 @@
       "zh": "Meta",
       "ja": "メタ"
     }
+  },
+  {
+    "id": "cash",
+    "type": "cash",
+    "symbol": "CASH",
+    "icon": "💰",
+    "order": 14,
+    "names": {
+      "en": "Cash",
+      "ko": "현금",
+      "zh": "现金",
+      "ja": "現金"
+    }
   }
 ]
 
