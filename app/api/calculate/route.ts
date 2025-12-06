@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { InvestmentConfig, AssetDefinition } from '@/types';
+import { InvestmentConfig, AssetDefinition, PriceData } from '@/types';
 import { fetchPrices } from '@/lib/priceService';
 import { calculateInvestment } from '@/lib/calculator';
 import assetsData from '../assets/assets.json';
@@ -51,9 +51,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch price data
+    // Fetch price data (현금 자산은 가격 데이터 없음)
     const days = config.yearsAgo * 365;
-    const priceData = await fetchPrices(asset, days);
+    let priceData: PriceData[] = [];
+    
+    if (asset.type === 'cash') {
+      // 현금 자산은 금리 2.1% 기반으로 가격 데이터 생성
+      const totalDays = days;
+      const dailyRate = 0.021 / 365; // 일일 금리
+      const basePrice = 100; // 기준 가격
+      
+      priceData = Array.from({ length: totalDays }, (_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - (totalDays - i));
+        const daysPassed = i;
+        const price = basePrice * Math.pow(1 + dailyRate, daysPassed);
+        return {
+          date: date.toISOString(),
+          price: price,
+        };
+      });
+    } else {
+      priceData = await fetchPrices(asset, days);
+    }
 
     // Calculate investment results
     const result = calculateInvestment(config, priceData);

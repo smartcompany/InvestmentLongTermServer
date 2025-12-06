@@ -59,6 +59,11 @@ async function fetchYahooPrices(symbol: string, days: number): Promise<PriceData
 }
 
 export function fetchPrices(asset: AssetDefinition, days: number): Promise<PriceData[]> {
+  // 현금 자산은 가격 데이터가 없으므로 빈 배열 반환
+  if (asset.type === 'cash') {
+    return Promise.resolve([]);
+  }
+  
   if (!asset.symbol) {
     throw new Error(`Asset ${asset.id} is missing a data symbol`);
   }
