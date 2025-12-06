@@ -3,7 +3,7 @@
     "id": "bitcoin",
     "type": "crypto",
     "symbol": "BTC-USD",
-    "icon": "🪙",
+    "icon": "₿",
     "defaultYearsAgo": 5,
     "order": 1,
     "names": {
