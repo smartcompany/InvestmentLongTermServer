@@ -214,6 +214,123 @@
       "zh": "白银",
       "ja": "銀"
     }
+  },
+  {
+    "id": "samsung",
+    "type": "stock",
+    "symbol": "005930.KS",
+    "icon": "📱",
+    "order": 17,
+    "names": {
+      "en": "Samsung Electronics",
+      "ko": "삼성전자",
+      "zh": "三星电子",
+      "ja": "サムスン電子"
+    }
+  },
+  {
+    "id": "sk_hynix",
+    "type": "stock",
+    "symbol": "000660.KS",
+    "icon": "💾",
+    "order": 18,
+    "names": {
+      "en": "SK Hynix",
+      "ko": "SK하이닉스",
+      "zh": "SK海力士",
+      "ja": "SKハイニックス"
+    }
+  },
+  {
+    "id": "hyundai",
+    "type": "stock",
+    "symbol": "005380.KS",
+    "icon": "🚗",
+    "order": 19,
+    "names": {
+      "en": "Hyundai Motor",
+      "ko": "현대자동차",
+      "zh": "现代汽车",
+      "ja": "現代自動車"
+    }
+  },
+  {
+    "id": "naver",
+    "type": "stock",
+    "symbol": "035420.KS",
+    "icon": "🔍",
+    "order": 20,
+    "names": {
+      "en": "Naver",
+      "ko": "네이버",
+      "zh": "Naver",
+      "ja": "ネイバー"
+    }
+  },
+  {
+    "id": "kakao",
+    "type": "stock",
+    "symbol": "035720.KS",
+    "icon": "💬",
+    "order": 21,
+    "names": {
+      "en": "Kakao",
+      "ko": "카카오",
+      "zh": "Kakao",
+      "ja": "カカオ"
+    }
+  },
+  {
+    "id": "lg_energy",
+    "type": "stock",
+    "symbol": "373220.KS",
+    "icon": "🔋",
+    "order": 22,
+    "names": {
+      "en": "LG Energy Solution",
+      "ko": "LG에너지솔루션",
+      "zh": "LG能源解决方案",
+      "ja": "LGエナジーソリューション"
+    }
+  },
+  {
+    "id": "celltrion",
+    "type": "stock",
+    "symbol": "068270.KS",
+    "icon": "💉",
+    "order": 23,
+    "names": {
+      "en": "Celltrion",
+      "ko": "셀트리온",
+      "zh": "Celltrion",
+      "ja": "セルトリオン"
+    }
+  },
+  {
+    "id": "posco",
+    "type": "stock",
+    "symbol": "005490.KS",
+    "icon": "🏭",
+    "order": 24,
+    "names": {
+      "en": "POSCO Holdings",
+      "ko": "POSCO홀딩스",
+      "zh": "浦项制铁",
+      "ja": "POSCOホールディングス"
+    }
+  },
+  {
+    "id": "kb_financial",
+    "type": "stock",
+    "symbol": "105560.KS",
+    "icon": "🏦",
+    "order": 25,
+    "names": {
+      "en": "KB Financial Group",
+      "ko": "KB금융",
+      "zh": "KB金融集团",
+      "ja": "KB金融グループ"
+    }
   }
 ]
 
