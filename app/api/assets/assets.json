@@ -217,7 +217,7 @@
   },
   {
     "id": "samsung",
-    "type": "stock",
+    "type": "korean_stock",
     "symbol": "005930.KS",
     "icon": "📱",
     "order": 17,
@@ -230,7 +230,7 @@
   },
   {
     "id": "sk_hynix",
-    "type": "stock",
+    "type": "korean_stock",
     "symbol": "000660.KS",
     "icon": "💾",
     "order": 18,
@@ -243,7 +243,7 @@
   },
   {
     "id": "hyundai",
-    "type": "stock",
+    "type": "korean_stock",
     "symbol": "005380.KS",
     "icon": "🚗",
     "order": 19,
@@ -256,7 +256,7 @@
   },
   {
     "id": "naver",
-    "type": "stock",
+    "type": "korean_stock",
     "symbol": "035420.KS",
     "icon": "🔍",
     "order": 20,
@@ -269,7 +269,7 @@
   },
   {
     "id": "kakao",
-    "type": "stock",
+    "type": "korean_stock",
     "symbol": "035720.KS",
     "icon": "💬",
     "order": 21,
@@ -282,7 +282,7 @@
   },
   {
     "id": "lg_energy",
-    "type": "stock",
+    "type": "korean_stock",
     "symbol": "373220.KS",
     "icon": "🔋",
     "order": 22,
@@ -295,7 +295,7 @@
   },
   {
     "id": "celltrion",
-    "type": "stock",
+    "type": "korean_stock",
     "symbol": "068270.KS",
     "icon": "💉",
     "order": 23,
@@ -308,7 +308,7 @@
   },
   {
     "id": "posco",
-    "type": "stock",
+    "type": "korean_stock",
     "symbol": "005490.KS",
     "icon": "🏭",
     "order": 24,
@@ -321,7 +321,7 @@
   },
   {
     "id": "kb_financial",
-    "type": "stock",
+    "type": "korean_stock",
     "symbol": "105560.KS",
     "icon": "🏦",
     "order": 25,
