@@ -24,23 +24,46 @@ async function fetchYahooPrices(symbol: string, days: number): Promise<PriceData
     const period1 = Math.floor(startDate.getTime() / 1000);
     const period2 = Math.floor(endDate.getTime() / 1000);
 
+    // URL 인코딩 (한국 주식 심볼의 경우 .KS가 제대로 처리되도록)
+    const encodedSymbol = encodeURIComponent(symbol);
+    
     // Yahoo Finance API
-    const response = await fetch(
-      `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?period1=${period1}&period2=${period2}&interval=1d`,
-      { headers: YAHOO_HEADERS }
-    );
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodedSymbol}?period1=${period1}&period2=${period2}&interval=1d`;
+    console.log(`Fetching prices for ${symbol} (${encodedSymbol}): ${url}`);
+    
+    const response = await fetch(url, { headers: YAHOO_HEADERS });
 
     if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      console.error(`Yahoo Finance API error (${symbol}): ${response.status} ${response.statusText}`, errorText);
       throw new Error(`Yahoo Finance API error (${symbol}): ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
+    
+    // 에러 체크 (Yahoo Finance는 때때로 에러를 200 응답에 포함시킴)
+    if (data.chart?.error) {
+      console.error(`Yahoo Finance API error (${symbol}):`, data.chart.error);
+      throw new Error(`Yahoo Finance API error (${symbol}): ${JSON.stringify(data.chart.error)}`);
+    }
+    
     const result = data.chart?.result?.[0];
+    
+    if (!result) {
+      console.error(`Yahoo Finance API error (${symbol}): No result in response`, JSON.stringify(data));
+      throw new Error(`Yahoo Finance API error (${symbol}): No result in response`);
+    }
+    
     const timestamps: number[] = result?.timestamp ?? [];
     const closePrices: (number | null)[] = result?.indicators?.quote?.[0]?.close ?? [];
 
     if (!timestamps.length || !closePrices.length) {
-      throw new Error(`Yahoo Finance API error (${symbol}): missing data`);
+      console.error(`Yahoo Finance API error (${symbol}): missing data`, {
+        timestampsLength: timestamps.length,
+        closePricesLength: closePrices.length,
+        result: result
+      });
+      throw new Error(`Yahoo Finance API error (${symbol}): missing data (timestamps: ${timestamps.length}, prices: ${closePrices.length})`);
     }
 
     const prices: PriceData[] = timestamps
@@ -50,6 +73,12 @@ async function fetchYahooPrices(symbol: string, days: number): Promise<PriceData
       }))
       .filter((point) => Number.isFinite(point.price));
 
+    if (prices.length === 0) {
+      console.error(`Yahoo Finance API error (${symbol}): No valid prices after filtering`);
+      throw new Error(`Yahoo Finance API error (${symbol}): No valid prices`);
+    }
+
+    console.log(`Successfully fetched ${prices.length} price points for ${symbol}`);
     cache.set(cacheKey, { data: prices, timestamp: Date.now() });
     return prices;
   } catch (error) {
