@@ -216,6 +216,90 @@
     }
   },
   {
+    "id": "crude_oil",
+    "type": "commodity",
+    "symbol": "CL=F",
+    "icon": "🛢️",
+    "defaultYearsAgo": 5,
+    "order": 26,
+    "names": {
+      "en": "Crude Oil",
+      "ko": "원유",
+      "zh": "原油",
+      "ja": "原油"
+    }
+  },
+  {
+    "id": "brent_oil",
+    "type": "commodity",
+    "symbol": "BZ=F",
+    "icon": "🛢️",
+    "defaultYearsAgo": 5,
+    "order": 27,
+    "names": {
+      "en": "Brent Oil",
+      "ko": "브렌트유",
+      "zh": "布伦特原油",
+      "ja": "ブレント原油"
+    }
+  },
+  {
+    "id": "copper",
+    "type": "commodity",
+    "symbol": "HG=F",
+    "icon": "🔶",
+    "defaultYearsAgo": 5,
+    "order": 28,
+    "names": {
+      "en": "Copper",
+      "ko": "구리",
+      "zh": "铜",
+      "ja": "銅"
+    }
+  },
+  {
+    "id": "natural_gas",
+    "type": "commodity",
+    "symbol": "NG=F",
+    "icon": "⛽",
+    "defaultYearsAgo": 5,
+    "order": 29,
+    "names": {
+      "en": "Natural Gas",
+      "ko": "천연가스",
+      "zh": "天然气",
+      "ja": "天然ガス"
+    }
+  },
+  {
+    "id": "wheat",
+    "type": "commodity",
+    "symbol": "ZW=F",
+    "icon": "🌾",
+    "defaultYearsAgo": 5,
+    "order": 30,
+    "names": {
+      "en": "Wheat",
+      "ko": "밀",
+      "zh": "小麦",
+      "ja": "小麦"
+    }
+  },
+  {
+    "id": "corn",
+    "type": "commodity",
+    "symbol": "ZC=F",
+    "icon": "🌽",
+    "defaultYearsAgo": 5,
+    "order": 31,
+    "names": {
+      "en": "Corn",
+      "ko": "옥수수",
+      "zh": "玉米",
+      "ja": "トウモロコシ"
+    }
+  },
+  {
     "id": "samsung",
     "type": "korean_stock",
     "symbol": "005930.KS",
