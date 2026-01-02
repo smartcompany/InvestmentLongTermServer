@@ -418,7 +418,7 @@
   },
   {
     "id": "korean_real_estate",
-    "type": "korean_stock",
+    "type": "real_estate",
     "symbol": "350520.KS",
     "icon": "🏢",
     "defaultYearsAgo": 5,
