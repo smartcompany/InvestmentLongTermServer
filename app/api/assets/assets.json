@@ -415,6 +415,20 @@
       "zh": "KB金融集团",
       "ja": "KB金融グループ"
     }
+  },
+  {
+    "id": "korean_real_estate",
+    "type": "korean_stock",
+    "symbol": "350520.KS",
+    "icon": "🏢",
+    "defaultYearsAgo": 5,
+    "order": 32,
+    "names": {
+      "en": "Korean Real Estate (REITs)",
+      "ko": "한국 부동산",
+      "zh": "韩国房地产",
+      "ja": "韓国不動産"
+    }
   }
 ]
 
