@@ -1,26 +1,77 @@
 import { PriceData } from '@/types';
 
-// Simple in-memory cache
-const cache = new Map<string, { data: PriceData[]; timestamp: number }>();
-const CACHE_TTL = 1000 * 60 * 60 * 24; // 24 hours (월별 데이터이므로 하루 캐시)
+// 월별 데이터 캐시 (YYYYMM -> price)
+const monthlyCache = new Map<string, { price: number; timestamp: number }>();
+// 최종 결과 캐시 (days -> PriceData[])
+const resultCache = new Map<string, { data: PriceData[]; timestamp: number }>();
+const MONTHLY_CACHE_TTL = 1000 * 60 * 60 * 24 * 7; // 7 days (월별 데이터는 일주일 캐시)
+const RESULT_CACHE_TTL = 1000 * 60 * 60 * 24; // 24 hours (최종 결과는 하루 캐시)
+
+/**
+ * 월별 전국 지가지수 데이터 가져오기 (캐시 우선)
+ */
+async function fetchMonthlyNationalPrice(yyyymm: string): Promise<number | null> {
+  const cacheKey = `national-${yyyymm}`;
+  const cached = monthlyCache.get(cacheKey);
+  
+  if (cached && Date.now() - cached.timestamp < MONTHLY_CACHE_TTL) {
+    return cached.price;
+  }
+
+  const apiKey = process.env.REAL_ESTATE_API_KEY || '';
+  if (!apiKey) {
+    throw new Error('REAL_ESTATE_API_KEY environment variable is not set');
+  }
+
+  try {
+    const url = `https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do?STATBL_ID=A_2024_00901&DTACYCLE_CD=MM&WRTTIME_IDTFR_ID=${yyyymm}&Type=json&KEY=${apiKey}`;
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.error(`Korean Real Estate API error: ${response.status} ${response.statusText}`);
+      return null;
+    }
+
+    const data = await response.json();
+    
+    // 에러 체크
+    const result = data.RESULT || data.SttsApiTblData?.[0]?.head?.[1]?.RESULT;
+    if (result && result.CODE && result.CODE.startsWith('ERROR')) {
+      console.error(`Korean Real Estate API error: ${result.CODE} ${result.MESSAGE}`);
+      return null;
+    }
+
+    // 데이터 추출 (전국 데이터)
+    const rows = data.SttsApiTblData?.[1]?.row || [];
+    const nationalData = rows.find((row: any) => row.CLS_NM === '전국');
+    
+    if (nationalData && nationalData.DTA_VAL) {
+      const indexValue = parseFloat(nationalData.DTA_VAL);
+      if (!isNaN(indexValue) && isFinite(indexValue)) {
+        // 캐시에 저장
+        monthlyCache.set(cacheKey, { price: indexValue, timestamp: Date.now() });
+        return indexValue;
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error(`Error fetching Korean Real Estate data for ${yyyymm}:`, error);
+    return null;
+  }
+}
 
 /**
  * 한국부동산원 API에서 월별 지가지수 데이터 가져오기 (전국)
  */
 async function fetchKoreanRealEstatePrices(days: number): Promise<PriceData[]> {
-  const cacheKey = `korean-real-estate-${days}`;
-  const cached = cache.get(cacheKey);
+  const resultCacheKey = `korean-real-estate-${days}`;
+  const cached = resultCache.get(resultCacheKey);
 
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+  if (cached && Date.now() - cached.timestamp < RESULT_CACHE_TTL) {
     return cached.data;
   }
 
   try {
-    const apiKey = process.env.REAL_ESTATE_API_KEY || '';
-    if (!apiKey) {
-      throw new Error('REAL_ESTATE_API_KEY environment variable is not set');
-    }
-
     // 시작일 계산
     const endDate = new Date();
     const startDate = new Date();
@@ -29,56 +80,30 @@ async function fetchKoreanRealEstatePrices(days: number): Promise<PriceData[]> {
     const prices: PriceData[] = [];
     const currentDate = new Date(startDate);
 
-    // 월별 데이터를 순회하면서 가져오기
+    // 월별 데이터를 순회하면서 가져오기 (캐시 우선 사용)
     while (currentDate <= endDate) {
       const year = currentDate.getFullYear();
       const month = String(currentDate.getMonth() + 1).padStart(2, '0');
       const yyyymm = `${year}${month}`;
 
-      try {
-        const url = `https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do?STATBL_ID=A_2024_00901&DTACYCLE_CD=MM&WRTTIME_IDTFR_ID=${yyyymm}&Type=json&KEY=${apiKey}`;
-        
-        const response = await fetch(url);
-        if (!response.ok) {
-          console.error(`Korean Real Estate API error: ${response.status} ${response.statusText}`);
-          // 에러가 나도 다음 달 시도
-          currentDate.setMonth(currentDate.getMonth() + 1);
-          continue;
-        }
-
-        const data = await response.json();
-        
-        // 에러 체크
-        const result = data.RESULT || data.SttsApiTblData?.[0]?.head?.[1]?.RESULT;
-        if (result && result.CODE && result.CODE.startsWith('ERROR')) {
-          console.error(`Korean Real Estate API error: ${result.CODE} ${result.MESSAGE}`);
-          currentDate.setMonth(currentDate.getMonth() + 1);
-          continue;
-        }
-
-        // 데이터 추출 (전국 데이터)
-        const rows = data.SttsApiTblData?.[1]?.row || [];
-        const nationalData = rows.find((row: any) => row.CLS_NM === '전국');
-        
-        if (nationalData && nationalData.DTA_VAL) {
-          const indexValue = parseFloat(nationalData.DTA_VAL);
-          if (!isNaN(indexValue) && isFinite(indexValue)) {
-            // 해당 월의 첫날을 날짜로 사용
-            const date = new Date(year, currentDate.getMonth(), 1);
-            prices.push({
-              date: date.toISOString(),
-              price: indexValue,
-            });
-          }
-        }
-      } catch (error) {
-        console.error(`Error fetching Korean Real Estate data for ${yyyymm}:`, error);
+      const indexValue = await fetchMonthlyNationalPrice(yyyymm);
+      
+      if (indexValue !== null) {
+        // 해당 월의 첫날을 날짜로 사용
+        const date = new Date(year, currentDate.getMonth(), 1);
+        prices.push({
+          date: date.toISOString(),
+          price: indexValue,
+        });
       }
 
       // 다음 달로 이동
       currentDate.setMonth(currentDate.getMonth() + 1);
       
-      // API 호출 제한을 고려한 지연
+      // API 호출이 실제로 발생한 경우에만 지연 (캐시 히트 시 지연 불필요)
+      // 하지만 현재는 fetchMonthlyNationalPrice 내부에서 캐시 체크를 하므로
+      // 실제 API 호출이 발생했는지 여부를 알 수 없어 일단 지연
+      // 최적화: 캐시 히트인 경우 지연을 건너뛰도록 개선 가능
       await new Promise(resolve => setTimeout(resolve, 200));
     }
 
@@ -146,7 +171,7 @@ async function fetchKoreanRealEstatePrices(days: number): Promise<PriceData[]> {
     });
 
     console.log(`Successfully fetched ${filteredPrices.length} Korean Real Estate price points`);
-    cache.set(cacheKey, { data: filteredPrices, timestamp: Date.now() });
+    resultCache.set(resultCacheKey, { data: filteredPrices, timestamp: Date.now() });
     return filteredPrices;
   } catch (error) {
     console.error(`Error fetching Korean Real Estate prices:`, error);
@@ -155,22 +180,80 @@ async function fetchKoreanRealEstatePrices(days: number): Promise<PriceData[]> {
 }
 
 /**
+ * 월별 서울 구 평균 지가지수 데이터 가져오기 (캐시 우선)
+ */
+async function fetchMonthlySeoulPrice(yyyymm: string): Promise<number | null> {
+  const cacheKey = `seoul-${yyyymm}`;
+  const cached = monthlyCache.get(cacheKey);
+  
+  if (cached && Date.now() - cached.timestamp < MONTHLY_CACHE_TTL) {
+    return cached.price;
+  }
+
+  const apiKey = process.env.REAL_ESTATE_API_KEY || '';
+  if (!apiKey) {
+    throw new Error('REAL_ESTATE_API_KEY environment variable is not set');
+  }
+
+  try {
+    const url = `https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do?STATBL_ID=A_2024_00901&DTACYCLE_CD=MM&WRTTIME_IDTFR_ID=${yyyymm}&Type=json&KEY=${apiKey}&pSize=1000`;
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.error(`Seoul Real Estate API error: ${response.status} ${response.statusText}`);
+      return null;
+    }
+
+    const data = await response.json();
+    
+    // 에러 체크
+    const result = data.RESULT || data.SttsApiTblData?.[0]?.head?.[1]?.RESULT;
+    if (result && result.CODE && result.CODE.startsWith('ERROR')) {
+      console.error(`Seoul Real Estate API error: ${result.CODE} ${result.MESSAGE}`);
+      return null;
+    }
+
+    // 데이터 추출 (서울 구 평균)
+    const rows = data.SttsApiTblData?.[1]?.row || [];
+    
+    // 서울 구 데이터 찾기 (서울>구 형태, 한 단계만 깊이)
+    const seoulGuData = rows.filter((row: any) => {
+      const fullnm = row.CLS_FULLNM || '';
+      return fullnm.startsWith('서울>') && fullnm.split('>').length === 2;
+    });
+    
+    if (seoulGuData.length > 0) {
+      // 서울 구들의 평균 계산
+      const values = seoulGuData
+        .map((row: any) => parseFloat(row.DTA_VAL))
+        .filter((val: number) => !isNaN(val) && isFinite(val));
+      
+      if (values.length > 0) {
+        const indexValue = values.reduce((sum: number, val: number) => sum + val, 0) / values.length;
+        // 캐시에 저장
+        monthlyCache.set(cacheKey, { price: indexValue, timestamp: Date.now() });
+        return indexValue;
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error(`Error fetching Seoul Real Estate data for ${yyyymm}:`, error);
+    return null;
+  }
+}
+
+/**
  * 한국부동산원 API에서 월별 지가지수 데이터 가져오기 (서울 구 평균)
  */
 async function fetchSeoulRealEstatePrices(days: number): Promise<PriceData[]> {
-  const cacheKey = `seoul-real-estate-${days}`;
-  const cached = cache.get(cacheKey);
+  const resultCacheKey = `seoul-real-estate-${days}`;
+  const cached = resultCache.get(resultCacheKey);
 
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+  if (cached && Date.now() - cached.timestamp < RESULT_CACHE_TTL) {
     return cached.data;
   }
 
   try {
-    const apiKey = process.env.REAL_ESTATE_API_KEY || '';
-    if (!apiKey) {
-      throw new Error('REAL_ESTATE_API_KEY environment variable is not set');
-    }
-
     // 시작일 계산
     const endDate = new Date();
     const startDate = new Date();
@@ -179,60 +262,21 @@ async function fetchSeoulRealEstatePrices(days: number): Promise<PriceData[]> {
     const prices: PriceData[] = [];
     const currentDate = new Date(startDate);
 
-    // 월별 데이터를 순회하면서 가져오기
+    // 월별 데이터를 순회하면서 가져오기 (캐시 우선 사용)
     while (currentDate <= endDate) {
       const year = currentDate.getFullYear();
       const month = String(currentDate.getMonth() + 1).padStart(2, '0');
       const yyyymm = `${year}${month}`;
 
-      try {
-        const url = `https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do?STATBL_ID=A_2024_00901&DTACYCLE_CD=MM&WRTTIME_IDTFR_ID=${yyyymm}&Type=json&KEY=${apiKey}&pSize=1000`;
-        
-        const response = await fetch(url);
-        if (!response.ok) {
-          console.error(`Seoul Real Estate API error: ${response.status} ${response.statusText}`);
-          // 에러가 나도 다음 달 시도
-          currentDate.setMonth(currentDate.getMonth() + 1);
-          continue;
-        }
-
-        const data = await response.json();
-        
-        // 에러 체크
-        const result = data.RESULT || data.SttsApiTblData?.[0]?.head?.[1]?.RESULT;
-        if (result && result.CODE && result.CODE.startsWith('ERROR')) {
-          console.error(`Seoul Real Estate API error: ${result.CODE} ${result.MESSAGE}`);
-          currentDate.setMonth(currentDate.getMonth() + 1);
-          continue;
-        }
-
-        // 데이터 추출 (서울 구 평균)
-        const rows = data.SttsApiTblData?.[1]?.row || [];
-        
-        // 서울 구 데이터 찾기 (서울>구 형태, 한 단계만 깊이)
-        const seoulGuData = rows.filter((row: any) => {
-          const fullnm = row.CLS_FULLNM || '';
-          return fullnm.startsWith('서울>') && fullnm.split('>').length === 2;
+      const indexValue = await fetchMonthlySeoulPrice(yyyymm);
+      
+      if (indexValue !== null) {
+        // 해당 월의 첫날을 날짜로 사용
+        const date = new Date(year, currentDate.getMonth(), 1);
+        prices.push({
+          date: date.toISOString(),
+          price: indexValue,
         });
-        
-        if (seoulGuData.length > 0) {
-          // 서울 구들의 평균 계산
-          const values = seoulGuData
-            .map((row: any) => parseFloat(row.DTA_VAL))
-            .filter((val: number) => !isNaN(val) && isFinite(val));
-          
-          if (values.length > 0) {
-            const indexValue = values.reduce((sum: number, val: number) => sum + val, 0) / values.length;
-            // 해당 월의 첫날을 날짜로 사용
-            const date = new Date(year, currentDate.getMonth(), 1);
-            prices.push({
-              date: date.toISOString(),
-              price: indexValue,
-            });
-          }
-        }
-      } catch (error) {
-        console.error(`Error fetching Seoul Real Estate data for ${yyyymm}:`, error);
       }
 
       // 다음 달로 이동
@@ -306,7 +350,7 @@ async function fetchSeoulRealEstatePrices(days: number): Promise<PriceData[]> {
     });
 
     console.log(`Successfully fetched ${filteredPrices.length} Seoul Real Estate price points`);
-    cache.set(cacheKey, { data: filteredPrices, timestamp: Date.now() });
+    resultCache.set(resultCacheKey, { data: filteredPrices, timestamp: Date.now() });
     return filteredPrices;
   } catch (error) {
     console.error(`Error fetching Seoul Real Estate prices:`, error);
