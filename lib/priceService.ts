@@ -1,5 +1,5 @@
 import { AssetDefinition, PriceData } from '@/types';
-import { fetchKoreanRealEstatePrices } from './realEstateService';
+import { fetchKoreanRealEstatePrices, fetchSeoulRealEstatePrices } from './realEstateService';
 
 // Simple in-memory cache
 const cache = new Map<string, { data: PriceData[]; timestamp: number }>();
@@ -96,6 +96,11 @@ export function fetchPrices(asset: AssetDefinition, days: number): Promise<Price
   
   // 한국 부동산은 한국부동산원 API 사용
   if (asset.type === 'real_estate') {
+    // 서울 부동산은 별도 함수 사용
+    if (asset.id === 'korean_seoul_real_estate') {
+      return fetchSeoulRealEstatePrices(days);
+    }
+    // 전국 부동산
     return fetchKoreanRealEstatePrices(days);
   }
   

@@ -429,6 +429,20 @@
       "zh": "韩国房地产",
       "ja": "韓国不動産"
     }
+  },
+  {
+    "id": "korean_seoul_real_estate",
+    "type": "real_estate",
+    "symbol": "",
+    "icon": "🏙️",
+    "defaultYearsAgo": 5,
+    "order": 33,
+    "names": {
+      "en": "Korean Seoul Real Estate",
+      "ko": "한국 서울 부동산",
+      "zh": "韩国首尔房地产",
+      "ja": "韓国ソウル不動産"
+    }
   }
 ]
 
