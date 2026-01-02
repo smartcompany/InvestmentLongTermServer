@@ -58,4 +58,6 @@ vercel
 
 ## Environment Variables
 
-No environment variables required. APIs used are public and don't require authentication.
+- `REAL_ESTATE_API_KEY` (optional): 한국부동산원 R-ONE API 인증키. 한국 부동산 자산 사용 시 필요합니다.
+  - 발급: https://www.reb.or.kr/r-one/portal/openapi/openApiDevPage.do
+  - 없으면 한국 부동산 자산이 동작하지 않습니다.

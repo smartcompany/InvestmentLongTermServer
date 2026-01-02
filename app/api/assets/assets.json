@@ -419,12 +419,12 @@
   {
     "id": "korean_real_estate",
     "type": "real_estate",
-    "symbol": "350520.KS",
+    "symbol": "",
     "icon": "🏢",
     "defaultYearsAgo": 5,
     "order": 32,
     "names": {
-      "en": "Korean Real Estate (REITs)",
+      "en": "Korean Real Estate",
       "ko": "한국 부동산",
       "zh": "韩国房地产",
       "ja": "韓国不動産"
