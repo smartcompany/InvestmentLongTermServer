@@ -99,12 +99,6 @@ async function fetchKoreanRealEstatePrices(days: number): Promise<PriceData[]> {
 
       // 다음 달로 이동
       currentDate.setMonth(currentDate.getMonth() + 1);
-      
-      // API 호출이 실제로 발생한 경우에만 지연 (캐시 히트 시 지연 불필요)
-      // 하지만 현재는 fetchMonthlyNationalPrice 내부에서 캐시 체크를 하므로
-      // 실제 API 호출이 발생했는지 여부를 알 수 없어 일단 지연
-      // 최적화: 캐시 히트인 경우 지연을 건너뛰도록 개선 가능
-      await new Promise(resolve => setTimeout(resolve, 200));
     }
 
     if (prices.length === 0) {
@@ -281,9 +275,6 @@ async function fetchSeoulRealEstatePrices(days: number): Promise<PriceData[]> {
 
       // 다음 달로 이동
       currentDate.setMonth(currentDate.getMonth() + 1);
-      
-      // API 호출 제한을 고려한 지연
-      await new Promise(resolve => setTimeout(resolve, 200));
     }
 
     if (prices.length === 0) {
