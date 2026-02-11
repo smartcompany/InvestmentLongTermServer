@@ -1,5 +1,8 @@
 import { PriceData } from '@/types';
 
+// 아파트 매매가격지수용 통계표 (전국주택가격동향조사)
+const APARTMENT_STATBL_ID = 'A_2024_00004';
+
 // 월별 데이터 캐시 (YYYYMM -> price)
 const monthlyCache = new Map<string, { price: number; timestamp: number }>();
 // 최종 결과 캐시 (days -> PriceData[])
@@ -8,10 +11,11 @@ const MONTHLY_CACHE_TTL = 1000 * 60 * 60 * 24 * 7; // 7 days (월별 데이터�
 const RESULT_CACHE_TTL = 1000 * 60 * 60 * 24; // 24 hours (최종 결과는 하루 캐시)
 
 /**
- * 월별 전국 지가지수 데이터 가져오기 (캐시 우선)
+ * 월별 전국 아파트 매매가격지수 데이터 가져오기 (캐시 우선)
+ * 전국주택가격동향조사 - 아파트 매매가격지수
  */
 async function fetchMonthlyNationalPrice(yyyymm: string): Promise<number | null> {
-  const cacheKey = `national-${yyyymm}`;
+  const cacheKey = `national-apartment-${yyyymm}`;
   const cached = monthlyCache.get(cacheKey);
   
   if (cached && Date.now() - cached.timestamp < MONTHLY_CACHE_TTL) {
@@ -24,7 +28,7 @@ async function fetchMonthlyNationalPrice(yyyymm: string): Promise<number | null>
   }
 
   try {
-    const url = `https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do?STATBL_ID=A_2024_00901&DTACYCLE_CD=MM&WRTTIME_IDTFR_ID=${yyyymm}&Type=json&KEY=${apiKey}`;
+    const url = `https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do?STATBL_ID=${APARTMENT_STATBL_ID}&DTACYCLE_CD=MM&WRTTIME_IDTFR_ID=${yyyymm}&Type=json&KEY=${apiKey}&pSize=1000`;
     
     const response = await fetch(url);
     if (!response.ok) {
@@ -41,14 +45,19 @@ async function fetchMonthlyNationalPrice(yyyymm: string): Promise<number | null>
       return null;
     }
 
-    // 데이터 추출 (전국 데이터)
+    // 데이터 추출 (전국 아파트 매매가격지수)
     const rows = data.SttsApiTblData?.[1]?.row || [];
-    const nationalData = rows.find((row: any) => row.CLS_NM === '전국');
+    // 전국주택가격동향: 전국 + 아파트 + 매매가격지수 우선, 없으면 전국만
+    const nationalData =
+      rows.find((row: any) => {
+        const nm = `${row.CLS_NM || ''} ${row.CLS_FULLNM || ''} ${row.OBJ_NM || ''} ${row.GRP_NM || ''} ${row.ITM_NM || ''}`;
+        return (row.CLS_NM === '전국' || (row.CLS_FULLNM || '').endsWith('전국')) && nm.includes('아파트') && nm.includes('매매');
+      }) ||
+      rows.find((row: any) => row.CLS_NM === '전국');
     
     if (nationalData && nationalData.DTA_VAL) {
       const indexValue = parseFloat(nationalData.DTA_VAL);
       if (!isNaN(indexValue) && isFinite(indexValue)) {
-        // 캐시에 저장
         monthlyCache.set(cacheKey, { price: indexValue, timestamp: Date.now() });
         return indexValue;
       }
@@ -61,10 +70,10 @@ async function fetchMonthlyNationalPrice(yyyymm: string): Promise<number | null>
 }
 
 /**
- * 한국부동산원 API에서 월별 지가지수 데이터 가져오기 (전국)
+ * 한국부동산원 API에서 월별 아파트 매매가격지수 데이터 가져오기 (전국)
  */
 async function fetchKoreanRealEstatePrices(days: number): Promise<PriceData[]> {
-  const resultCacheKey = `korean-real-estate-${days}`;
+  const resultCacheKey = `korean-apartment-${days}`;
   const cached = resultCache.get(resultCacheKey);
 
   if (cached && Date.now() - cached.timestamp < RESULT_CACHE_TTL) {
@@ -72,37 +81,42 @@ async function fetchKoreanRealEstatePrices(days: number): Promise<PriceData[]> {
   }
 
   try {
-    // 시작일 계산
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const prices: PriceData[] = [];
+    // 조회할 월 목록 생성 (yyyymm, year, month)
+    const monthsToFetch: { yyyymm: string; year: number; month: number }[] = [];
     const currentDate = new Date(startDate);
-
-    // 월별 데이터를 순회하면서 가져오기 (캐시 우선 사용)
     while (currentDate <= endDate) {
       const year = currentDate.getFullYear();
-      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-      const yyyymm = `${year}${month}`;
-
-      const indexValue = await fetchMonthlyNationalPrice(yyyymm);
-      
-      if (indexValue !== null) {
-        // 해당 월의 첫날을 날짜로 사용
-        const date = new Date(year, currentDate.getMonth(), 1);
-        prices.push({
-          date: date.toISOString(),
-          price: indexValue,
-        });
-      }
-
-      // 다음 달로 이동
+      const month = currentDate.getMonth();
+      monthsToFetch.push({
+        yyyymm: `${year}${String(month + 1).padStart(2, '0')}`,
+        year,
+        month,
+      });
       currentDate.setMonth(currentDate.getMonth() + 1);
     }
 
+    // 모든 월을 병렬로 조회 (캐시된 월은 즉시 반환, 나머지만 실제 fetch)
+    const results = await Promise.all(
+      monthsToFetch.map(({ yyyymm }) => fetchMonthlyNationalPrice(yyyymm))
+    );
+
+    const prices: PriceData[] = [];
+    results.forEach((indexValue, i) => {
+      if (indexValue !== null) {
+        const { year, month } = monthsToFetch[i];
+        prices.push({
+          date: new Date(year, month, 1).toISOString(),
+          price: indexValue,
+        });
+      }
+    });
+
     if (prices.length === 0) {
-      throw new Error('No valid Korean Real Estate price data found');
+      throw new Error('No valid Korean apartment price data found');
     }
 
     // 날짜순 정렬
@@ -164,7 +178,7 @@ async function fetchKoreanRealEstatePrices(days: number): Promise<PriceData[]> {
       return priceDate >= startDate && priceDate <= endDate;
     });
 
-    console.log(`Successfully fetched ${filteredPrices.length} Korean Real Estate price points`);
+    console.log(`Successfully fetched ${filteredPrices.length} Korean apartment price points`);
     resultCache.set(resultCacheKey, { data: filteredPrices, timestamp: Date.now() });
     return filteredPrices;
   } catch (error) {
@@ -174,10 +188,11 @@ async function fetchKoreanRealEstatePrices(days: number): Promise<PriceData[]> {
 }
 
 /**
- * 월별 서울 구 평균 지가지수 데이터 가져오기 (캐시 우선)
+ * 월별 서울 구 평균 아파트 매매가격지수 데이터 가져오기 (캐시 우선)
+ * 전국주택가격동향조사 - 아파트 매매가격지수 (서울 시군구)
  */
 async function fetchMonthlySeoulPrice(yyyymm: string): Promise<number | null> {
-  const cacheKey = `seoul-${yyyymm}`;
+  const cacheKey = `seoul-apartment-${yyyymm}`;
   const cached = monthlyCache.get(cacheKey);
   
   if (cached && Date.now() - cached.timestamp < MONTHLY_CACHE_TTL) {
@@ -190,7 +205,7 @@ async function fetchMonthlySeoulPrice(yyyymm: string): Promise<number | null> {
   }
 
   try {
-    const url = `https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do?STATBL_ID=A_2024_00901&DTACYCLE_CD=MM&WRTTIME_IDTFR_ID=${yyyymm}&Type=json&KEY=${apiKey}&pSize=1000`;
+    const url = `https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do?STATBL_ID=${APARTMENT_STATBL_ID}&DTACYCLE_CD=MM&WRTTIME_IDTFR_ID=${yyyymm}&Type=json&KEY=${apiKey}&pSize=2000`;
     
     const response = await fetch(url);
     if (!response.ok) {
@@ -200,31 +215,27 @@ async function fetchMonthlySeoulPrice(yyyymm: string): Promise<number | null> {
 
     const data = await response.json();
     
-    // 에러 체크
     const result = data.RESULT || data.SttsApiTblData?.[0]?.head?.[1]?.RESULT;
     if (result && result.CODE && result.CODE.startsWith('ERROR')) {
       console.error(`Seoul Real Estate API error: ${result.CODE} ${result.MESSAGE}`);
       return null;
     }
 
-    // 데이터 추출 (서울 구 평균)
     const rows = data.SttsApiTblData?.[1]?.row || [];
-    
-    // 서울 구 데이터 찾기 (서울>구 형태, 한 단계만 깊이)
-    const seoulGuData = rows.filter((row: any) => {
-      const fullnm = row.CLS_FULLNM || '';
-      return fullnm.startsWith('서울>') && fullnm.split('>').length === 2;
+    // 서울 구 데이터 (서울>구 형태, 아파트 매매 우선)
+    const targetRows = rows.filter((row: any) => {
+      const fullnm = (row.CLS_FULLNM || '').trim();
+      const nm = `${row.OBJ_NM || ''} ${row.GRP_NM || ''} ${row.ITM_NM || ''}`;
+      const isSeoulGu = fullnm.startsWith('서울>') && fullnm.split('>').length === 2;
+      return isSeoulGu;
     });
     
-    if (seoulGuData.length > 0) {
-      // 서울 구들의 평균 계산
-      const values = seoulGuData
+    if (targetRows.length > 0) {
+      const values = targetRows
         .map((row: any) => parseFloat(row.DTA_VAL))
         .filter((val: number) => !isNaN(val) && isFinite(val));
-      
       if (values.length > 0) {
         const indexValue = values.reduce((sum: number, val: number) => sum + val, 0) / values.length;
-        // 캐시에 저장
         monthlyCache.set(cacheKey, { price: indexValue, timestamp: Date.now() });
         return indexValue;
       }
@@ -237,10 +248,10 @@ async function fetchMonthlySeoulPrice(yyyymm: string): Promise<number | null> {
 }
 
 /**
- * 한국부동산원 API에서 월별 지가지수 데이터 가져오기 (서울 구 평균)
+ * 한국부동산원 API에서 월별 아파트 매매가격지수 데이터 가져오기 (서울 구 평균)
  */
 async function fetchSeoulRealEstatePrices(days: number): Promise<PriceData[]> {
-  const resultCacheKey = `seoul-real-estate-${days}`;
+  const resultCacheKey = `seoul-apartment-${days}`;
   const cached = resultCache.get(resultCacheKey);
 
   if (cached && Date.now() - cached.timestamp < RESULT_CACHE_TTL) {
@@ -248,40 +259,42 @@ async function fetchSeoulRealEstatePrices(days: number): Promise<PriceData[]> {
   }
 
   try {
-    // 시작일 계산
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const prices: PriceData[] = [];
+    const monthsToFetch: { yyyymm: string; year: number; month: number }[] = [];
     const currentDate = new Date(startDate);
-
-    // 월별 데이터를 순회하면서 가져오기 (캐시 우선 사용)
     while (currentDate <= endDate) {
       const year = currentDate.getFullYear();
-      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-      const yyyymm = `${year}${month}`;
-
-      const indexValue = await fetchMonthlySeoulPrice(yyyymm);
-      
-      if (indexValue !== null) {
-        // 해당 월의 첫날을 날짜로 사용
-        const date = new Date(year, currentDate.getMonth(), 1);
-        prices.push({
-          date: date.toISOString(),
-          price: indexValue,
-        });
-      }
-
-      // 다음 달로 이동
+      const month = currentDate.getMonth();
+      monthsToFetch.push({
+        yyyymm: `${year}${String(month + 1).padStart(2, '0')}`,
+        year,
+        month,
+      });
       currentDate.setMonth(currentDate.getMonth() + 1);
     }
 
+    const results = await Promise.all(
+      monthsToFetch.map(({ yyyymm }) => fetchMonthlySeoulPrice(yyyymm))
+    );
+
+    const prices: PriceData[] = [];
+    results.forEach((indexValue, i) => {
+      if (indexValue !== null) {
+        const { year, month } = monthsToFetch[i];
+        prices.push({
+          date: new Date(year, month, 1).toISOString(),
+          price: indexValue,
+        });
+      }
+    });
+
     if (prices.length === 0) {
-      throw new Error('No valid Seoul Real Estate price data found');
+      throw new Error('No valid Seoul apartment price data found');
     }
 
-    // 날짜순 정렬
     prices.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     // 월별 데이터를 일별 데이터로 보간 (선형 보간)
@@ -340,7 +353,7 @@ async function fetchSeoulRealEstatePrices(days: number): Promise<PriceData[]> {
       return priceDate >= startDate && priceDate <= endDate;
     });
 
-    console.log(`Successfully fetched ${filteredPrices.length} Seoul Real Estate price points`);
+    console.log(`Successfully fetched ${filteredPrices.length} Seoul apartment price points`);
     resultCache.set(resultCacheKey, { data: filteredPrices, timestamp: Date.now() });
     return filteredPrices;
   } catch (error) {
