@@ -198,7 +198,7 @@ async function fetchMonthlySeoulPrice(yyyymm: string): Promise<number | null> {
   }
 
   try {
-    const url = `https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do?STATBL_ID=${LAND_STATBL_ID}&DTACYCLE_CD=MM&WRTTIME_IDTFR_ID=${yyyymm}&Type=json&KEY=${apiKey}&pSize=1000`;
+    const url = `https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do?STATBL_ID=${APARTMENT_STATBL_ID}&DTACYCLE_CD=MM&WRTTIME_IDTFR_ID=${yyyymm}&Type=json&KEY=${apiKey}&pSize=1000`;
     
     const response = await fetch(url);
     if (!response.ok) {
