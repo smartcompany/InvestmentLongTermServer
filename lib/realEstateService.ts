@@ -81,8 +81,10 @@ async function fetchKoreanRealEstatePrices(days: number): Promise<PriceData[]> {
 
     // 조회할 월 목록 생성 (yyyymm, year, month)
     const monthsToFetch: { yyyymm: string; year: number; month: number }[] = [];
-    const currentDate = new Date(startDate);
-    while (currentDate <= endDate) {
+    let currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    const endYear = endDate.getFullYear();
+    const endMonth = endDate.getMonth();
+    while (currentDate.getFullYear() < endYear || (currentDate.getFullYear() === endYear && currentDate.getMonth() <= endMonth)) {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
       monthsToFetch.push({
@@ -90,7 +92,7 @@ async function fetchKoreanRealEstatePrices(days: number): Promise<PriceData[]> {
         year,
         month,
       });
-      currentDate.setMonth(currentDate.getMonth() + 1);
+      currentDate = new Date(year, month + 1, 1); // 다음 달 1일 (롤오버 방지)
     }
 
     // 모든 월을 병렬로 조회 (캐시된 월은 즉시 반환, 나머지만 실제 fetch)
@@ -260,8 +262,10 @@ async function fetchSeoulRealEstatePrices(days: number): Promise<PriceData[]> {
     startDate.setDate(startDate.getDate() - days);
 
     const monthsToFetch: { yyyymm: string; year: number; month: number }[] = [];
-    const currentDate = new Date(startDate);
-    while (currentDate <= endDate) {
+    let currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    const endYear = endDate.getFullYear();
+    const endMonth = endDate.getMonth();
+    while (currentDate.getFullYear() < endYear || (currentDate.getFullYear() === endYear && currentDate.getMonth() <= endMonth)) {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
       monthsToFetch.push({
@@ -269,7 +273,7 @@ async function fetchSeoulRealEstatePrices(days: number): Promise<PriceData[]> {
         year,
         month,
       });
-      currentDate.setMonth(currentDate.getMonth() + 1);
+      currentDate = new Date(year, month + 1, 1); // 다음 달 1일 (롤오버 방지)
     }
 
     const results = await Promise.all(
