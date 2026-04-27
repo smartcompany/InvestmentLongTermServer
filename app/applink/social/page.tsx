@@ -14,19 +14,23 @@ const BOOT_SCRIPT = `
   var isIOS = /iphone|ipad|ipod/i.test(ua);
   var elIos = document.getElementById("applink-btn-ios");
   var elAnd = document.getElementById("applink-btn-android");
-  if (isIOS && elIos) { elIos.setAttribute("href", ${JSON.stringify(IOS_APP_STORE_ITMS)}); }
+  if (isIOS && elIos && ${JSON.stringify(Boolean(IOS_APP_STORE_ITMS))}) { elIos.setAttribute("href", ${JSON.stringify(IOS_APP_STORE_ITMS)}); }
   if (isAndroid && elAnd) { elAnd.setAttribute("href", ${JSON.stringify(PLAY_STORE_MARKET)}); }
   if (inApp) { return; }
   if (!isAndroid && !isIOS) { return; }
-  var scheme = isAndroid ? ${JSON.stringify(PLAY_STORE_MARKET)} : ${JSON.stringify(IOS_APP_STORE_ITMS)};
-  var web = isAndroid ? ${JSON.stringify(PLAY_STORE_WEB)} : ${JSON.stringify(IOS_APP_STORE_WEB)};
+  var scheme = isAndroid ? ${JSON.stringify(PLAY_STORE_MARKET)} : ${JSON.stringify(IOS_APP_STORE_ITMS ?? "")};
+  var web = isAndroid ? ${JSON.stringify(PLAY_STORE_WEB)} : ${JSON.stringify(IOS_APP_STORE_WEB ?? "")};
+  if (!isAndroid && !web) { return; }
   var t = window.setTimeout(function () { window.location.replace(web); }, 2000);
   function cancel() {
     if (t !== null) { window.clearTimeout(t); t = null; }
   }
   document.addEventListener("visibilitychange", function () { if (document.hidden) { cancel(); } });
   window.addEventListener("pagehide", cancel);
-  try { window.location.href = scheme; } catch (e) { cancel(); window.location.replace(web); }
+  try {
+    if (scheme) { window.location.href = scheme; }
+    else { cancel(); window.location.replace(web); }
+  } catch (e) { cancel(); window.location.replace(web); }
 })();
 `.trim();
 
@@ -91,19 +95,21 @@ export default function AppLinkSocialPage() {
         >
           <a
             id="applink-btn-ios"
-            href={IOS_APP_STORE_WEB}
+            href={IOS_APP_STORE_WEB ?? "#"}
             style={{
               display: "block",
               borderRadius: 12,
-              background: "#ffffff",
-              color: "#18181b",
+              background: IOS_APP_STORE_WEB ? "#ffffff" : "rgba(255,255,255,0.1)",
+              color: IOS_APP_STORE_WEB ? "#18181b" : "#a1a1aa",
               textDecoration: "none",
               padding: "14px 20px",
               fontSize: 14,
               fontWeight: 700,
+              pointerEvents: IOS_APP_STORE_WEB ? "auto" : "none",
+              opacity: IOS_APP_STORE_WEB ? 1 : 0.7,
             }}
           >
-            App Store
+            {IOS_APP_STORE_WEB ? "App Store" : "App Store (coming soon)"}
           </a>
           <a
             id="applink-btn-android"

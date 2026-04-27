@@ -6,6 +6,8 @@ import {
   PLAY_STORE_WEB,
 } from "@/lib/applink";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Time Capital - Download",
   description: "Redirects to App Store or Google Play by device.",
@@ -20,7 +22,7 @@ export default async function AppLinkPage() {
   if (platform === "android") {
     redirect(PLAY_STORE_WEB);
   }
-  if (platform === "ios") {
+  if (platform === "ios" && IOS_APP_STORE_WEB) {
     redirect(IOS_APP_STORE_WEB);
   }
 
