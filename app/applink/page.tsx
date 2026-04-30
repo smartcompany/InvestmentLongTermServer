@@ -26,5 +26,5 @@ export default async function AppLinkPage() {
     redirect(IOS_APP_STORE_WEB);
   }
 
-  redirect("/applink/social");
+  redirect(IOS_APP_STORE_WEB);
 }
