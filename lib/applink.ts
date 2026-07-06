@@ -3,7 +3,7 @@ const hasValidIosUrl =
   typeof iosUrlFromEnv === "string" &&
   iosUrlFromEnv.startsWith("https://apps.apple.com/");
 
-const DEFAULT_IOS_APP_STORE_WEB = "https://apps.apple.com/us/app/time-capital/id6755960389";
+const DEFAULT_IOS_APP_STORE_WEB = "https://apps.apple.com/app/id6755960389";
 
 export const IOS_APP_STORE_WEB = hasValidIosUrl
   ? iosUrlFromEnv
