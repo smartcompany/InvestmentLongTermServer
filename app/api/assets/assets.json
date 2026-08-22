@@ -84,6 +84,34 @@
     }
   },
   {
+    "id": "usdt",
+    "type": "crypto",
+    "symbol": "USDT-USD",
+    "icon": "💵",
+    "defaultYearsAgo": 5,
+    "order": 6,
+    "names": {
+      "en": "Tether",
+      "ko": "테더",
+      "zh": "泰达币",
+      "ja": "テザー"
+    }
+  },
+  {
+    "id": "usdc",
+    "type": "crypto",
+    "symbol": "USDC-USD",
+    "icon": "💲",
+    "defaultYearsAgo": 5,
+    "order": 6,
+    "names": {
+      "en": "USD Coin",
+      "ko": "USD 코인",
+      "zh": "USD Coin",
+      "ja": "USDコイン"
+    }
+  },
+  {
     "id": "tesla",
     "type": "stock",
     "symbol": "TSLA",
