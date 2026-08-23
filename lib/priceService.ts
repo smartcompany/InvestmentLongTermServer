@@ -8,7 +8,7 @@ const YAHOO_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (compatible; InvestLongTerm/1.0; +https://vercel.com)',
 };
 
-async function fetchYahooPrices(symbol: string, days: number): Promise<PriceData[]> {
+export async function fetchYahooPrices(symbol: string, days: number): Promise<PriceData[]> {
   const cacheKey = `${symbol}-${days}`;
   const cached = cache.get(cacheKey);
 
