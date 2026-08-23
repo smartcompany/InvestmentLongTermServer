@@ -17,27 +17,82 @@ export const marketBriefingRequestSchema = z.object({
 
 export type MarketBriefingRequest = z.infer<typeof marketBriefingRequestSchema>;
 
+const moodEnum = z.enum(['hot', 'steady', 'choppy', 'cool', 'watch']);
+type Mood = z.infer<typeof moodEnum>;
+
+/** AI가 mood를 대문자/한글/유사어로 줘도 살리기 */
+function normalizeMood(raw: unknown): Mood {
+  const s = String(raw ?? '')
+    .trim()
+    .toLowerCase();
+  const mapped: Record<string, Mood> = {
+    hot: 'hot',
+    fire: 'hot',
+    bullish: 'hot',
+    strong: 'hot',
+    '불타': 'hot',
+    '불타오름': 'hot',
+    '강세': 'hot',
+    steady: 'steady',
+    calm: 'steady',
+    stable: 'steady',
+    '잔잔': 'steady',
+    '잔잔함': 'steady',
+    '안정': 'steady',
+    choppy: 'choppy',
+    volatile: 'choppy',
+    wavy: 'choppy',
+    '출렁': 'choppy',
+    '출렁임': 'choppy',
+    '변동': 'choppy',
+    cool: 'cool',
+    cold: 'cool',
+    bearish: 'cool',
+    weak: 'cool',
+    '식음': 'cool',
+    '약세': 'cool',
+    '한숨': 'cool',
+    watch: 'watch',
+    caution: 'watch',
+    wait: 'watch',
+    '관망': 'watch',
+    '주의': 'watch',
+    '촉각': 'watch',
+  };
+  if (mapped[s]) return mapped[s];
+  for (const [key, mood] of Object.entries(mapped)) {
+    if (s.includes(key)) return mood;
+  }
+  return 'watch';
+}
+
 const assetConditionSchema = z.object({
   assetId: z.string().min(1).max(80),
-  name: z.string().min(1).max(120),
-  /** iconic mood for UI icons */
-  mood: z.enum(['hot', 'steady', 'choppy', 'cool', 'watch']),
+  name: z.string().min(1).max(120).optional().default(''),
+  /** iconic mood for UI icons — string then normalize (strict enum breaks whole JSON) */
+  mood: z.union([moodEnum, z.string()]).optional().default('watch'),
   /** short playful label, e.g. 불타오름 / 잔잔함 */
-  label: z.string().min(1).max(40),
+  label: z.string().max(40).optional().default(''),
   /** one-line condition note */
-  note: z.string().min(1).max(160),
+  note: z.string().max(200).optional().default(''),
 });
 
-const marketBriefingResponseSchema = z.object({
+const marketBriefingCoreSchema = z.object({
   todayHeadline: z.string().min(1).max(200),
   marketSummary: z.string().min(1).max(1200),
-  assetConditions: z.array(assetConditionSchema).max(20).optional().default([]),
   holdingsFocus: z.array(z.string().min(1).max(400)).min(1).max(6),
   nearTermOutlook: z.string().min(1).max(1200),
   watchPoints: z.array(z.string().min(1).max(400)).min(1).max(6),
 });
 
-export type MarketBriefing = z.infer<typeof marketBriefingResponseSchema> & {
+export type MarketBriefing = z.infer<typeof marketBriefingCoreSchema> & {
+  assetConditions: Array<{
+    assetId: string;
+    name: string;
+    mood: Mood;
+    label: string;
+    note: string;
+  }>;
   disclaimer: string;
   asOfDate: string;
 };
@@ -163,36 +218,105 @@ async function generateBriefingOnce(
     throw new Error('Empty response from Gemini');
   }
 
-  const parsed = parseJsonFromModelText(text);
-  const validated = marketBriefingResponseSchema.parse(parsed);
+  const parsed = parseJsonFromModelText(text) as Record<string, unknown>;
 
-  // 요청에 없는 assetId는 걸러내고, 누락 자산은 기본 watch로 보강
+  // assetConditions가 깨져도 본문 브리핑은 살리고, 조건은 항목별 느슨 파싱
+  const rawConditions = Array.isArray(parsed.assetConditions)
+    ? parsed.assetConditions
+    : Array.isArray(parsed.holdingConditions)
+      ? parsed.holdingConditions
+      : [];
+  const coreRaw = { ...parsed };
+  delete coreRaw.assetConditions;
+  delete coreRaw.holdingConditions;
+  const validated = marketBriefingCoreSchema.parse(coreRaw);
+
+  const defaultLabel =
+    input.locale === 'ko'
+      ? '관망'
+      : input.locale === 'ja'
+        ? '様子見'
+        : input.locale === 'zh'
+          ? '观望'
+          : 'Watch';
+  const defaultNote =
+    input.locale === 'ko'
+      ? '오늘은 흐름을 조금 더 지켜보면 좋아요.'
+      : 'Worth watching the flow a bit more today.';
+  const defaultLabels: Record<Mood, string> = {
+    hot:
+      input.locale === 'ko'
+        ? '불타오름'
+        : input.locale === 'ja'
+          ? '勢い'
+          : input.locale === 'zh'
+            ? '火热'
+            : 'Hot',
+    steady:
+      input.locale === 'ko'
+        ? '잔잔함'
+        : input.locale === 'ja'
+          ? '落ち着き'
+          : input.locale === 'zh'
+            ? '平稳'
+            : 'Steady',
+    choppy:
+      input.locale === 'ko'
+        ? '출렁임'
+        : input.locale === 'ja'
+          ? '波乱'
+          : input.locale === 'zh'
+            ? '波动'
+            : 'Choppy',
+    cool:
+      input.locale === 'ko'
+        ? '한숨 돌리기'
+        : input.locale === 'ja'
+          ? '冷え'
+          : input.locale === 'zh'
+            ? '转冷'
+            : 'Cooling',
+    watch: defaultLabel,
+  };
+
   const requestedIds = new Set(input.assets.map((a) => a.assetId));
-  const byId = new Map(
-    validated.assetConditions
-      .filter((c) => requestedIds.has(c.assetId))
-      .map((c) => [c.assetId, c] as const),
-  );
+  const byId = new Map<string, {
+    assetId: string;
+    name: string;
+    mood: Mood;
+    label: string;
+    note: string;
+  }>();
+
+  for (const item of rawConditions) {
+    const soft = assetConditionSchema.safeParse(item);
+    if (!soft.success) continue;
+    const c = soft.data;
+    if (!requestedIds.has(c.assetId)) continue;
+    const mood = normalizeMood(c.mood);
+    byId.set(c.assetId, {
+      assetId: c.assetId,
+      name: c.name.trim() || c.assetId,
+      mood,
+      label: c.label.trim() || defaultLabels[mood],
+      note: c.note.trim() || defaultNote,
+    });
+  }
 
   const assetConditions = input.assets.slice(0, 12).map((asset) => {
     const existing = byId.get(asset.assetId);
-    if (existing) return existing;
+    if (existing) {
+      return {
+        ...existing,
+        name: existing.name || asset.name,
+      };
+    }
     return {
       assetId: asset.assetId,
       name: asset.name,
       mood: 'watch' as const,
-      label:
-        input.locale === 'ko'
-          ? '관망'
-          : input.locale === 'ja'
-            ? '様子見'
-            : input.locale === 'zh'
-              ? '观望'
-              : 'Watch',
-      note:
-        input.locale === 'ko'
-          ? '오늘은 흐름을 조금 더 지켜보면 좋아요.'
-          : 'Worth watching the flow a bit more today.',
+      label: defaultLabel,
+      note: defaultNote,
     };
   });
 
