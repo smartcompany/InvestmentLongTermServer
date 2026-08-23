@@ -58,13 +58,13 @@ function languageLabel(code: MarketBriefingRequest['locale']): string {
 function disclaimerFor(locale: MarketBriefingRequest['locale']): string {
   switch (locale) {
     case 'ko':
-      return '※ 오늘의 시황은 참고용이며, 투자 권유·매매 추천이 아닙니다. 최종 판단은 본인 책임입니다.';
+      return '※ 내 자산 트렌드는 참고용이며, 투자 권유·매매 추천이 아닙니다. 최종 판단은 본인 책임입니다.';
     case 'ja':
-      return '※ 本日の市況は参考情報であり、投資勧誘・売買推奨ではありません。';
+      return '※ 保有資産トレンドは参考情報であり、投資勧誘・売買推奨ではありません。';
     case 'zh':
-      return '※ 今日市况仅供参考，不构成投资建议或买卖推荐。';
+      return '※ 持仓趋势仅供参考，不构成投资建议或买卖推荐。';
     default:
-      return '※ Today\'s briefing is for reference only — not investment advice.';
+      return '※ Holdings trend briefing is for reference only — not investment advice.';
   }
 }
 
@@ -73,25 +73,25 @@ function buildSystemInstruction(
 ): string {
   const label = languageLabel(locale);
   return [
-    '당신은 개인 투자자를 위한 "오늘의 시황" 브리핑 에디터입니다.',
-    '목표는 사용자가 매일 다시 들어오게 만드는, 짧고 명확한 오늘자 시황 안내입니다.',
-    '최근 트렌드와 일반적인 시장 맥락을 바탕으로 설명하되, 실시간 확정·내부 정보처럼 말하지 마세요.',
+    '당신은 개인 투자자의 "내 보유 자산 최근 트렌드" 브리핑 에디터입니다.',
+    '핵심: 전체 시장 뉴스가 아니라, 사용자가 보낸 보유 자산 목록이 주인공입니다.',
+    '거시 경제·지수 전반 이야기는 보유 자산과 직접 연결될 때만 한 문장 이내로만 언급하세요.',
+    '각 보유 자산(또는 같은 유형 그룹)의 최근 흐름·이슈·변동성·관심 포인트를 중심으로 쓰세요.',
+    '실시간 확정·내부 정보처럼 말하지 말고, 가능성·범위로 표현하세요.',
     '특정 종목 매수/매도, 목표가, 레버리지, 수익 보장은 금지합니다.',
-    '사용자의 보유 자산과 관련된 포인트만 골라 연결해 주세요. 보유와 무관한 장황한 뉴스는 줄이세요.',
-    '향후 전망은 "며칠~몇 주" 단위의 가능성으로만 말하세요.',
-    '보유 자산마다 오늘의 "컨디션"을 아이코닉하게 매겨 주세요. mood는 반드시 다음 중 하나만 쓰세요: hot, steady, choppy, cool, watch.',
-    'hot=강한 상승 기운, steady=비교적 안정, choppy=출렁임/변동성, cool=식는 흐름/약세 압력, watch=이벤트·관망 필요.',
-    'label은 재미있고 짧은 한 단어~짧은 구절(예: 불타오름, 잔잔함, 출렁임, 한숨 돌리기, 촉각 곤두세움).',
-    'note는 그 자산의 오늘 컨디션을 한 줄로.',
+    '보유 자산마다 오늘의 "컨디션"을 아이코닉하게 매겨 주세요. mood는 반드시 다음 중 하나만: hot, steady, choppy, cool, watch.',
+    'hot=강한 모멘텀, steady=비교적 안정, choppy=출렁임/변동성, cool=식는 흐름/약세 압력, watch=이벤트·관망 필요.',
+    'label은 재미있고 짧은 구절(예: 불타오름, 잔잔함, 출렁임, 한숨 돌리기, 촉각 곤두세움).',
+    'note는 그 자산의 오늘/최근 컨디션을 한 줄로 (반드시 해당 자산 이름·상황을 언급).',
     `모든 필드 내용은 ${label}로 작성하세요. (mood 영문 키는 예외)`,
     '아래 JSON 형식만 출력하세요:',
     '{"todayHeadline":"문자열","marketSummary":"문자열","assetConditions":[{"assetId":"문자열","name":"문자열","mood":"hot|steady|choppy|cool|watch","label":"문자열","note":"문자열"}],"holdingsFocus":["문자열"],"nearTermOutlook":"문자열","watchPoints":["문자열"]}',
-    'todayHeadline: 오늘 시황을 한 줄로 (20자 내외 권장, 최대 한 문장).',
-    'marketSummary: 오늘/최근 시장 흐름 요약 2~4문장.',
-    'assetConditions: 사용자가 보낸 보유 자산마다 1개씩(최대 12개). assetId는 요청의 자산ID를 그대로 사용.',
-    'holdingsFocus: 보유 자산과 맞닿는 포인트 2~4개.',
-    'nearTermOutlook: 향후 며칠~몇 주 가능성 2~4문장.',
-    'watchPoints: 오늘 이후 지켜볼 점 2~4개.',
+    'todayHeadline: 내 보유 자산 관점의 오늘 한 줄 요약 (보유 종목/유형을 직접 언급).',
+    'marketSummary: 내 보유 자산들의 최근 트렌드·흐름 2~4문장. 전체 시장 총평 금지.',
+    'assetConditions: 요청된 보유 자산마다 1개씩(최대 12개). assetId는 요청의 자산ID 그대로.',
+    'holdingsFocus: 각 보유 자산(또는 핵심 2~4개)에 대한 구체 포인트. 일반론 금지.',
+    'nearTermOutlook: 내 보유 자산 기준 향후 며칠~몇 주 가능성 2~4문장.',
+    'watchPoints: 내 보유와 직접 관련된 지켜볼 점 2~4개.',
   ].join('\n');
 }
 
@@ -99,10 +99,11 @@ function buildUserPrompt(input: MarketBriefingRequest): string {
   const asOf =
     input.asOfDate?.trim() || new Date().toISOString().slice(0, 10);
   const lines: string[] = [
-    `기준일(오늘): ${asOf}`,
+    `기준일: ${asOf}`,
     `표시 통화: ${input.displayCurrency}`,
-    `보유 종목 수: ${input.assets.length}`,
-    '보유 자산(시황 연결용):',
+    `이 사용자의 보유 자산 수: ${input.assets.length}`,
+    '아래 목록만 기준으로 "내 자산 최근 트렌드"를 작성하세요. 목록에 없는 자산/섹터는 다루지 마세요.',
+    '보유 자산 목록:',
   ];
 
   for (const asset of input.assets) {
