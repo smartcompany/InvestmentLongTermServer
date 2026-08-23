@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  transpilePackages: ['nextjs-share-lib'],
   async headers() {
     return [
       {

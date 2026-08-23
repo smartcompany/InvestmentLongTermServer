@@ -1,0 +1,3 @@
+{
+  "installCommand": "npm install nextjs-share-lib@github:smartcompany/nextjs_share_lib#main && npm install"
+}

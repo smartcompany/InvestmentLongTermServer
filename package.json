@@ -6,13 +6,16 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "update:share-lib": "npm install nextjs-share-lib@github:smartcompany/nextjs_share_lib#main"
   },
   "dependencies": {
     "cheerio": "^1.1.2",
     "next": "^15.5.7",
+    "nextjs-share-lib": "github:smartcompany/nextjs_share_lib#main",
     "react": "^18.3.0",
-    "react-dom": "^18.3.0"
+    "react-dom": "^18.3.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/cheerio": "^0.22.35",
