@@ -44,13 +44,13 @@ export type InvestmentInsight = z.infer<typeof insightResponseSchema> & {
 function languageLabel(code: z.infer<typeof localeSchema>): string {
   switch (code) {
     case 'ko':
-      return 'Korean';
+      return '한국어';
     case 'ja':
-      return 'Japanese';
+      return '일본어';
     case 'zh':
-      return 'Simplified Chinese';
+      return '중국어(간체)';
     default:
-      return 'English';
+      return '영어';
   }
 }
 
@@ -70,48 +70,49 @@ function disclaimerFor(locale: z.infer<typeof localeSchema>): string {
 function buildSystemInstruction(locale: z.infer<typeof localeSchema>): string {
   const label = languageLabel(locale);
   return [
-    'You are a calm long-term investing coach for retail investors.',
-    'Analyze the user portfolio snapshot and give high-level directional guidance.',
-    'Consider diversification, concentration risk, time horizon, and general market context for the asset types held.',
-    'Do NOT give specific buy/sell orders, price targets, leverage tips, or guarantees.',
-    'Do NOT claim insider knowledge or real-time certainty; speak in probabilities and ranges.',
-    `Write every field in ${label}.`,
-    'Respond with JSON only in this exact shape:',
-    '{"summary":"string","outlook":"string","suggestions":["string"],"risks":["string"]}',
-    'summary: 2-4 sentences on whether the portfolio looks balanced for long-term holding.',
-    'outlook: 2-4 sentences on current market context relevant to these holdings.',
-    'suggestions: 2-4 short actionable mindset/process tips (not ticker orders).',
-    'risks: 2-4 short risks to watch.',
+    '당신은 개인 투자자를 위한 차분한 장기 투자 코치입니다.',
+    '사용자가 보낸 포트폴리오 스냅샷을 보고, 큰 방향성만 안내하세요.',
+    '분산 투자, 특정 자산 편중(집중 리스크), 투자 기간을 중심으로 보세요.',
+    '오늘의 세부 시황·단기 뉴스는 "오늘의 시황" 기능에서 다루므로, 여기서는 길게 쓰지 마세요.',
+    '특정 종목의 매수/매도 주문, 목표가, 레버리지, 수익 보장은 절대 하지 마세요.',
+    '내부 정보나 실시간 확정처럼 말하지 말고, 가능성·범위로 표현하세요.',
+    `모든 필드 내용은 ${label}로 작성하세요.`,
+    '아래 JSON 형식만 출력하세요. 다른 설명 문구는 넣지 마세요:',
+    '{"summary":"문자열","outlook":"문자열","suggestions":["문자열"],"risks":["문자열"]}',
+    'summary: 장기 보유 관점에서 포트폴리오가 균형 잡혔는지 2~4문장.',
+    'outlook: 보유 구조에 대한 중장기 관점 코멘트 2~4문장 (당일 시황 나열 금지).',
+    'suggestions: 실행 가능한 마인드/프로세스 팁 2~4개 (종목 매매 지시 금지).',
+    'risks: 주의할 점 2~4개.',
   ].join('\n');
 }
 
 function buildUserPrompt(input: InsightRequest): string {
   const lines: string[] = [
-    `Display currency: ${input.displayCurrency}`,
-    `Holdings count: ${input.assets.length}`,
+    `표시 통화: ${input.displayCurrency}`,
+    `보유 종목 수: ${input.assets.length}`,
   ];
 
   if (input.totalPurchaseAmount != null) {
-    lines.push(`Total purchase amount: ${input.totalPurchaseAmount}`);
+    lines.push(`총 투자 원금: ${input.totalPurchaseAmount}`);
   }
   if (input.totalCurrentValue != null) {
-    lines.push(`Total current value: ${input.totalCurrentValue}`);
+    lines.push(`총 현재 가치: ${input.totalCurrentValue}`);
   }
   if (input.totalReturnRatePct != null) {
-    lines.push(`Total return %: ${input.totalReturnRatePct.toFixed(2)}`);
+    lines.push(`총 수익률(%): ${input.totalReturnRatePct.toFixed(2)}`);
   }
 
-  lines.push('Holdings:');
+  lines.push('보유 자산 목록:');
   for (const asset of input.assets) {
     lines.push(
       JSON.stringify({
-        name: asset.name,
-        assetId: asset.assetId,
-        type: asset.type ?? null,
-        quantity: asset.quantity ?? null,
-        initialAmount: asset.initialAmount ?? null,
-        currentValue: asset.currentValue ?? null,
-        returnRatePct:
+        이름: asset.name,
+        자산ID: asset.assetId,
+        유형: asset.type ?? null,
+        수량: asset.quantity ?? null,
+        투자원금: asset.initialAmount ?? null,
+        현재가치: asset.currentValue ?? null,
+        수익률_퍼센트:
           asset.returnRatePct != null
             ? Number(asset.returnRatePct.toFixed(2))
             : null,
