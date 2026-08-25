@@ -1,4 +1,5 @@
 {
+    "growth_race_ad_every": 5,
     "ios_ads": [
         {"initial_ad": 5}
     ],
@@ -19,4 +20,3 @@
     },
     "down_load_url": "https://investment-long-term-server.vercel.app/applink"
   }
-  

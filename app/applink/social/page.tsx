@@ -35,17 +35,17 @@ const BOOT_SCRIPT = `
 `.trim();
 
 export const metadata: Metadata = {
-  title: "Time Capital - Download",
-  description: "Choose App Store or Google Play to install Time Capital.",
+  title: "My Assets AI - Download",
+  description: "Choose App Store or Google Play to install My Assets AI.",
   robots: { index: false, follow: false },
   openGraph: {
-    title: "Time Capital",
+    title: "My Assets AI",
     description: "Long-term investment simulator for crypto, stocks, and real estate.",
     url: "https://investment-long-term-server.vercel.app/applink/social",
   },
   twitter: {
     card: "summary",
-    title: "Time Capital",
+    title: "My Assets AI",
     description: "Long-term investment simulator for crypto, stocks, and real estate.",
   },
 };
@@ -70,7 +70,7 @@ export default function AppLinkSocialPage() {
           fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
         }}
       >
-        <p style={{ margin: 0, fontSize: "16px", fontWeight: 700 }}>Time Capital</p>
+        <p style={{ margin: 0, fontSize: "16px", fontWeight: 700 }}>My Assets AI</p>
         <p
           style={{
             margin: "8px 0 0",

@@ -9,7 +9,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Time Capital - Download",
+  title: "My Assets AI - Download",
   description: "Redirects to App Store or Google Play by device.",
   robots: { index: false, follow: false },
 };
