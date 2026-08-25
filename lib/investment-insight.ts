@@ -26,6 +26,7 @@ export const insightRequestSchema = z.object({
   totalCurrentValue: z.number().finite().optional(),
   totalReturnRatePct: z.number().finite().optional(),
   assets: z.array(holdingSchema).min(1).max(40),
+  userRequest: z.string().trim().max(500).optional(),
 });
 
 export type InsightRequest = z.infer<typeof insightRequestSchema>;
@@ -76,6 +77,7 @@ function buildSystemInstruction(locale: z.infer<typeof localeSchema>): string {
     '오늘의 세부 시황·단기 뉴스는 "오늘의 시황" 기능에서 다루므로, 여기서는 길게 쓰지 마세요.',
     '특정 종목의 매수/매도 주문, 목표가, 레버리지, 수익 보장은 절대 하지 마세요.',
     '내부 정보나 실시간 확정처럼 말하지 말고, 가능성·범위로 표현하세요.',
+    'userRequest가 있으면 그 질문에 우선적으로 답하되, 매매 지시가 아니라 판단 관점·리스크·균형 관점으로만 설명하세요.',
     `모든 필드 내용은 ${label}로 작성하세요.`,
     '아래 JSON 형식만 출력하세요. 다른 설명 문구는 넣지 마세요:',
     '{"summary":"문자열","outlook":"문자열","suggestions":["문자열"],"risks":["문자열"]}',
@@ -118,6 +120,12 @@ function buildUserPrompt(input: InsightRequest): string {
             : null,
       }),
     );
+  }
+
+  const userRequest = input.userRequest?.trim();
+  if (userRequest) {
+    lines.push('사용자 추가 요청(이 질문에 우선 답변):');
+    lines.push(userRequest);
   }
 
   return lines.join('\n');

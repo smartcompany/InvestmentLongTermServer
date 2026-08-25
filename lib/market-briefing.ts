@@ -13,6 +13,7 @@ export const marketBriefingRequestSchema = z.object({
   /** ISO date YYYY-MM-DD (client local date preferred) */
   asOfDate: z.string().min(8).max(32).optional(),
   assets: z.array(holdingSchema).min(1).max(40),
+  userRequest: z.string().trim().max(500).optional(),
 });
 
 export type MarketBriefingRequest = z.infer<typeof marketBriefingRequestSchema>;
@@ -134,6 +135,7 @@ function buildSystemInstruction(
     '각 보유 자산(또는 같은 유형 그룹)의 최근 흐름·이슈·변동성·관심 포인트를 중심으로 쓰세요.',
     '실시간 확정·내부 정보처럼 말하지 말고, 가능성·범위로 표현하세요.',
     '특정 종목 매수/매도, 목표가, 레버리지, 수익 보장은 금지합니다.',
+    'userRequest가 있으면 그 질문에 우선적으로 답하되, 매매 지시가 아니라 트렌드·리스크·관점 설명으로만 답하세요.',
     '보유 자산마다 오늘의 "컨디션"을 아이코닉하게 매겨 주세요. mood는 반드시 다음 중 하나만: hot, steady, choppy, cool, watch.',
     'hot=강한 모멘텀, steady=비교적 안정, choppy=출렁임/변동성, cool=식는 흐름/약세 압력, watch=이벤트·관망 필요.',
     'label은 재미있고 짧은 구절(예: 불타오름, 잔잔함, 출렁임, 한숨 돌리기, 촉각 곤두세움).',
@@ -176,6 +178,12 @@ function buildUserPrompt(input: MarketBriefingRequest): string {
             : null,
       }),
     );
+  }
+
+  const userRequest = input.userRequest?.trim();
+  if (userRequest) {
+    lines.push('사용자 추가 요청(이 질문에 우선 답변):');
+    lines.push(userRequest);
   }
 
   return lines.join('\n');
