@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { geminiAi } from '@/lib/ai-client';
 import { isRetryableGeminiError } from '@/lib/gemini-errors';
+import { parseJsonFromModelText } from '@/lib/parse-model-json';
 import { holdingSchema } from '@/lib/investment-insight';
 const GEMINI_PRESET = 'default_lite' as const;
 const GEMINI_MAX_ATTEMPTS = 3;
@@ -190,13 +191,6 @@ function buildUserPrompt(input: MarketBriefingRequest): string {
   }
 
   return lines.join('\n');
-}
-
-function parseJsonFromModelText(text: string): unknown {
-  const trimmed = text.trim();
-  const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const jsonText = fenceMatch ? fenceMatch[1].trim() : trimmed;
-  return JSON.parse(jsonText);
 }
 
 function sleep(ms: number): Promise<void> {
