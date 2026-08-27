@@ -1,3 +1,9 @@
 {
-  "installCommand": "npm install nextjs-share-lib@github:smartcompany/nextjs_share_lib#main && npm install"
+  "installCommand": "npm install nextjs-share-lib@github:smartcompany/nextjs_share_lib#main && npm install",
+  "crons": [
+    {
+      "path": "/api/cron/portfolio-change",
+      "schedule": "0 1 * * *"
+    }
+  ]
 }

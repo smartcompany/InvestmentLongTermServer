@@ -10,7 +10,9 @@
     "update:share-lib": "npm install nextjs-share-lib@github:smartcompany/nextjs_share_lib#main"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.4",
     "cheerio": "^1.1.2",
+    "firebase-admin": "^14.3.0",
     "next": "^15.5.7",
     "nextjs-share-lib": "github:smartcompany/nextjs_share_lib#main",
     "react": "^18.3.0",
