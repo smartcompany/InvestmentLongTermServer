@@ -58,6 +58,15 @@ export async function POST(request: NextRequest) {
     if (!pushEnabled) update.fcm_token = null;
     if (platform) update.platform = platform;
     if (locale) update.locale = locale;
+    if (typeof body.pushPortfolioChange === 'boolean') {
+      update.push_portfolio_change = body.pushPortfolioChange;
+    }
+    if (typeof body.pushAiTrend === 'boolean') {
+      update.push_ai_trend = body.pushAiTrend;
+    }
+    if (typeof body.pushAiPortfolio === 'boolean') {
+      update.push_ai_portfolio = body.pushAiPortfolio;
+    }
 
     const { error } = await supabase
       .from('assetfit_anonymous_users')

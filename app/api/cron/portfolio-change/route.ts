@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
 import { sendFcmToToken } from '@/lib/firebase-admin';
+import { assertCronAuth } from '@/lib/cron-auth';
 import {
   CHANGE_THRESHOLD,
   HoldingRow,
   computePortfolioTotal,
   dayKey,
 } from '@/lib/portfolio-valuation';
-
-function assertCronAuth(request: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  const auth = request.headers.get('authorization') ?? '';
-  return auth === `Bearer ${secret}`;
-}
 
 export async function GET(request: NextRequest) {
   if (!assertCronAuth(request)) {
@@ -29,6 +23,7 @@ export async function GET(request: NextRequest) {
       'anonymous_id, fcm_token, locale, last_portfolio_total, last_change_notify_day, push_enabled',
     )
     .eq('push_enabled', true)
+    .eq('push_portfolio_change', true)
     .not('fcm_token', 'is', null);
 
   if (usersError) {
