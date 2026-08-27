@@ -1,5 +1,5 @@
 import { getSupabase } from '@/lib/supabase';
-import { sendFcmToToken } from '@/lib/firebase-admin';
+import { sendPushToDevice } from '@/lib/firebase-admin';
 
 export type AiPushKind = 'market_briefing' | 'portfolio_insight';
 
@@ -114,14 +114,15 @@ export async function broadcastAiContentPush(kind: AiPushKind): Promise<{
 
       const locale = user.locale || 'ko';
       const { title, body } = copyFor(kind, locale);
-      const sent = await sendFcmToToken({
-        token: user.fcm_token,
+      const status = await sendPushToDevice({
+        fcmToken: user.fcm_token,
         title,
         body,
         data: { payload },
+        anonymousId: user.anonymous_id,
       });
 
-      if (sent) {
+      if (status === 'sent') {
         notified += 1;
       } else {
         errors += 1;

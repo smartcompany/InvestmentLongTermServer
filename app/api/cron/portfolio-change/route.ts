@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
-import { sendFcmToToken } from '@/lib/firebase-admin';
+import { sendPushToDevice } from '@/lib/firebase-admin';
 import { assertCronAuth } from '@/lib/cron-auth';
 import {
   CHANGE_THRESHOLD,
@@ -101,7 +101,6 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      const token = user.fcm_token as string;
       const pctText = (changePct * 100).toFixed(1);
       const sign = changePct >= 0 ? '+' : '';
       const locale = (user.locale as string) || 'ko';
@@ -114,14 +113,15 @@ export async function GET(request: NextRequest) {
           ? `Total value moved ${sign}${pctText}%. Check My Assets.`
           : `총 평가액이 ${sign}${pctText}% 변했어요. 내 자산에서 확인해 보세요.`;
 
-      const sent = await sendFcmToToken({
-        token,
+      const status = await sendPushToDevice({
+        fcmToken: user.fcm_token as string | null,
         title,
         body,
         data: { payload: 'my_assets' },
+        anonymousId: user.anonymous_id,
       });
 
-      if (sent) {
+      if (status === 'sent') {
         await supabase
           .from('assetfit_anonymous_users')
           .update({
